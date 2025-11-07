@@ -114,7 +114,7 @@ QPushButton:pressed{background:#ededed;}</string>
          <string>Consultar Eventos</string>
         </property>
         <property name="icon">
-         <iconset resource="../../Teams/Clase/DAM2/VisualStudio/gestor_eventos/resources.qrc">
+         <iconset resource="../imagenes/resources.qrc">
           <normaloff>:/prefijoNuevo/group.png</normaloff>:/prefijoNuevo/group.png</iconset>
         </property>
         <property name="iconSize">
@@ -145,7 +145,7 @@ QPushButton:pressed{background:#ededed;}</string>
          <string>Nuevo Evento</string>
         </property>
         <property name="icon">
-         <iconset resource="../../Teams/Clase/DAM2/VisualStudio/gestor_eventos/resources.qrc">
+         <iconset resource="../imagenes/resources.qrc">
           <normaloff>:/prefijoNuevo/calendar.png</normaloff>:/prefijoNuevo/calendar.png</iconset>
         </property>
         <property name="iconSize">
@@ -176,7 +176,7 @@ QPushButton:pressed{background:#ededed;}</string>
          <string>Modificar Eventos</string>
         </property>
         <property name="icon">
-         <iconset resource="../../Teams/Clase/DAM2/VisualStudio/gestor_eventos/resources.qrc">
+         <iconset resource="../imagenes/resources.qrc">
           <normaloff>:/prefijoNuevo/settings.png</normaloff>:/prefijoNuevo/settings.png</iconset>
         </property>
         <property name="iconSize">
@@ -210,7 +210,7 @@ QPushButton:pressed{background:#ededed;}</string>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
  <resources>
-  <include location="../../Teams/Clase/DAM2/VisualStudio/gestor_eventos/resources.qrc"/>
+  <include location="../imagenes/resources.qrc"/>
  </resources>
  <connections/>
 </ui>
