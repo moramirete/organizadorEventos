@@ -1,0 +1,7 @@
+<RCC>
+  <qresource prefix="prefijoNuevo">
+    <file>calendar.png</file>
+    <file>group.png</file>
+    <file>settings.png</file>
+  </qresource>
+</RCC>
