@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1024</width>
+    <height>700</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Gestor de Eventos - Los Super Nenes</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="mainLayout">
+    <property name="spacing">
+     <number>18</number>
+    </property>
+    <property name="leftMargin">
+     <number>20</number>
+    </property>
+    <property name="topMargin">
+     <number>20</number>
+    </property>
+    <property name="rightMargin">
+     <number>20</number>
+    </property>
+    <property name="bottomMargin">
+     <number>20</number>
+    </property>
+    <item>
+     <widget class="QFrame" name="headerFrame">
+      <property name="styleSheet">
+       <string notr="true">background-color:#1E73E8; border-radius:6px;</string>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::NoFrame</enum>
+      </property>
+      <layout class="QHBoxLayout" name="headerLayout">
+       <property name="leftMargin">
+        <number>16</number>
+       </property>
+       <property name="topMargin">
+        <number>14</number>
+       </property>
+       <property name="rightMargin">
+        <number>16</number>
+       </property>
+       <property name="bottomMargin">
+        <number>14</number>
+       </property>
+       <item>
+        <widget class="QLabel" name="lblTitulo">
+         <property name="text">
+          <string>&lt;span style=&quot;color:white; font-size:20pt; font-weight:600;&quot;&gt;Gestor de Eventos - Los Super Nenes&lt;/span&gt;</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <widget class="QLabel" name="lblBienvenida">
+      <property name="text">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot;font-size:18pt; font-weight:600; color:#333333;&quot;&gt;Bienvenidos al Gestor de Eventos&lt;/span&gt;&lt;br/&gt;&lt;span style=&quot;font-size:18pt; font-weight:600; color:#333333;&quot;&gt;Super Nernes&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="cardsLayout">
+      <property name="spacing">
+       <number>28</number>
+      </property>
+      <property name="leftMargin">
+       <number>40</number>
+      </property>
+      <property name="topMargin">
+       <number>10</number>
+      </property>
+      <property name="rightMargin">
+       <number>40</number>
+      </property>
+      <property name="bottomMargin">
+       <number>10</number>
+      </property>
+      <item>
+       <widget class="QPushButton" name="btnConsultar">
+        <property name="minimumSize">
+         <size>
+          <width>220</width>
+          <height>200</height>
+         </size>
+        </property>
+        <property name="toolTip">
+         <string>Abrir la vista de consulta de eventos</string>
+        </property>
+        <property name="layoutDirection">
+         <enum>Qt::LeftToRight</enum>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton{background:#ffffff; border:1px solid #d8d8d8; border-radius:14px; padding:12px; font-size:11pt;}
+QPushButton:hover{background:#f4f4f4;}
+QPushButton:pressed{background:#ededed;}</string>
+        </property>
+        <property name="text">
+         <string>Consultar Eventos</string>
+        </property>
+        <property name="icon">
+         <iconset resource="../../Teams/Clase/DAM2/VisualStudio/gestor_eventos/resources.qrc">
+          <normaloff>:/prefijoNuevo/group.png</normaloff>:/prefijoNuevo/group.png</iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>72</width>
+          <height>72</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btnNuevo">
+        <property name="minimumSize">
+         <size>
+          <width>220</width>
+          <height>200</height>
+         </size>
+        </property>
+        <property name="toolTip">
+         <string>Crear un nuevo evento</string>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton{background:#ffffff; border:1px solid #d8d8d8; border-radius:14px; padding:12px; font-size:11pt;}
+QPushButton:hover{background:#f4f4f4;}
+QPushButton:pressed{background:#ededed;}</string>
+        </property>
+        <property name="text">
+         <string>Nuevo Evento</string>
+        </property>
+        <property name="icon">
+         <iconset resource="../../Teams/Clase/DAM2/VisualStudio/gestor_eventos/resources.qrc">
+          <normaloff>:/prefijoNuevo/calendar.png</normaloff>:/prefijoNuevo/calendar.png</iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>72</width>
+          <height>72</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btnModificar">
+        <property name="minimumSize">
+         <size>
+          <width>220</width>
+          <height>200</height>
+         </size>
+        </property>
+        <property name="toolTip">
+         <string>Editar o eliminar eventos existentes</string>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton{background:#ffffff; border:1px solid #d8d8d8; border-radius:14px; padding:12px; font-size:11pt;}
+QPushButton:hover{background:#f4f4f4;}
+QPushButton:pressed{background:#ededed;}</string>
+        </property>
+        <property name="text">
+         <string>Modificar Eventos</string>
+        </property>
+        <property name="icon">
+         <iconset resource="../../Teams/Clase/DAM2/VisualStudio/gestor_eventos/resources.qrc">
+          <normaloff>:/prefijoNuevo/settings.png</normaloff>:/prefijoNuevo/settings.png</iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>72</width>
+          <height>72</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <spacer name="verticalSpacer">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <property name="sizeType">
+       <enum>QSizePolicy::Fixed</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>20</width>
+        <height>40</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <resources>
+  <include location="../../Teams/Clase/DAM2/VisualStudio/gestor_eventos/resources.qrc"/>
+ </resources>
+ <connections/>
+</ui>
