@@ -1,30 +1,43 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>EventForm</class>
- <widget class="QMainWindow" name="EventForm">
+ <class>HomeParticipantes</class>
+ <widget class="QMainWindow" name="HomeParticipantes">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
-    <height>600</height>
+    <width>960</width>
+    <height>620</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Gestor de Eventos - Los Super Nenes</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="mainLayout">
+   <layout class="QVBoxLayout" name="vlMain">
+    <property name="leftMargin">
+     <number>16</number>
+    </property>
+    <property name="topMargin">
+     <number>14</number>
+    </property>
+    <property name="rightMargin">
+     <number>16</number>
+    </property>
+    <property name="bottomMargin">
+     <number>14</number>
+    </property>
     <item>
-     <widget class="QFrame" name="headerFrame">
+     <widget class="QFrame" name="header">
       <property name="styleSheet">
-       <string notr="true">background-color:#1E73E8; border-radius:6px;</string>
+       <string notr="true">QFrame#header{background:#1E73E8; border-radius:8px; padding:14px;}
+QLabel#titulo{color:white; font-size:22pt; font-weight:600;}</string>
       </property>
-      <layout class="QHBoxLayout" name="headerLayout">
+      <layout class="QHBoxLayout" name="hlHeader">
        <item>
-        <widget class="QLabel" name="lblTitulo">
+        <widget class="QLabel" name="titulo">
          <property name="text">
-          <string>&lt;span style=&quot;color:white; font-size:20pt; font-weight:600;&quot;&gt;Gestor de Eventos - Los Super Nenes&lt;/span&gt;</string>
+          <string>Gestor de Eventos - Los Super Nenes</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignCenter</set>
@@ -35,14 +48,11 @@
      </widget>
     </item>
     <item>
-     <layout class="QHBoxLayout">
+     <layout class="QVBoxLayout" name="vlNombre">
       <item>
-       <widget class="QLabel" name="lblNombreEvento">
-        <property name="font">
-         <font>
-          <weight>75</weight>
-          <bold>true</bold>
-         </font>
+       <widget class="QLabel" name="lblNombre">
+        <property name="styleSheet">
+         <string notr="true">QLabel{font-weight:600;}</string>
         </property>
         <property name="text">
          <string>Nombre Evento</string>
@@ -52,65 +62,79 @@
       <item>
        <widget class="QLineEdit" name="leNombreEvento">
         <property name="styleSheet">
-         <string>background-color:#ffffff; border: 1px solid #d8d8d8; border-radius: 12px; padding: 10px; font-size: 12pt; width: 300px;</string>
+         <string notr="true">QLineEdit{background:white; border:1px solid #d8d8d8; border-radius:12px; padding:10px;}</string>
         </property>
        </widget>
       </item>
      </layout>
     </item>
     <item>
-     <layout class="QHBoxLayout">
+     <layout class="QHBoxLayout" name="hlCounts">
+      <property name="spacing">
+       <number>18</number>
+      </property>
       <item>
-       <widget class="QLabel" name="lblMesas">
-        <property name="font">
-         <font>
-          <weight>75</weight>
-          <bold>true</bold>
-         </font>
-        </property>
-        <property name="text">
-         <string>Nº Mesas</string>
-        </property>
-       </widget>
+       <layout class="QVBoxLayout" name="vlMesas">
+        <item>
+         <widget class="QLabel" name="lblMesas">
+          <property name="styleSheet">
+           <string notr="true">QLabel{font-weight:600;}</string>
+          </property>
+          <property name="text">
+           <string>Nº Mesas</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QSpinBox" name="sbMesas">
+          <property name="styleSheet">
+           <string notr="true">QSpinBox{background:white; border:1px solid #d8d8d8; border-radius:12px; padding:6px 10px;}</string>
+          </property>
+          <property name="minimum">
+           <number>0</number>
+          </property>
+          <property name="maximum">
+           <number>999</number>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
       <item>
-       <widget class="QLineEdit" name="leMesas">
-        <property name="styleSheet">
-         <string>background-color:#ffffff; border: 1px solid #d8d8d8; border-radius: 12px; padding: 10px; font-size: 12pt; width: 120px;</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLabel" name="lblInvitadosPorMesa">
-        <property name="font">
-         <font>
-          <weight>75</weight>
-          <bold>true</bold>
-         </font>
-        </property>
-        <property name="text">
-         <string>Nº Invitados por mesa</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLineEdit" name="leInvitadosPorMesa">
-        <property name="styleSheet">
-         <string>background-color:#ffffff; border: 1px solid #d8d8d8; border-radius: 12px; padding: 10px; font-size: 12pt; width: 120px;</string>
-        </property>
-       </widget>
+       <layout class="QVBoxLayout" name="vlInvMesa">
+        <item>
+         <widget class="QLabel" name="lblInvMesa">
+          <property name="styleSheet">
+           <string notr="true">QLabel{font-weight:600;}</string>
+          </property>
+          <property name="text">
+           <string>Nº Invitados por mesa</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QSpinBox" name="sbInvitadosPorMesa">
+          <property name="styleSheet">
+           <string notr="true">QSpinBox{background:white; border:1px solid #d8d8d8; border-radius:12px; padding:6px 10px;}</string>
+          </property>
+          <property name="minimum">
+           <number>0</number>
+          </property>
+          <property name="maximum">
+           <number>999</number>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
      </layout>
     </item>
     <item>
-     <layout class="QHBoxLayout">
+     <layout class="QVBoxLayout" name="vlFecha">
       <item>
-       <widget class="QLabel" name="lblFechaEvento">
-        <property name="font">
-         <font>
-          <weight>75</weight>
-          <bold>true</bold>
-         </font>
+       <widget class="QLabel" name="lblFecha">
+        <property name="styleSheet">
+         <string notr="true">QLabel{font-weight:600;}</string>
         </property>
         <property name="text">
          <string>Fecha del Evento</string>
@@ -118,85 +142,78 @@
        </widget>
       </item>
       <item>
-       <widget class="QLineEdit" name="leFechaEvento">
+       <widget class="QDateEdit" name="deFechaEvento">
         <property name="styleSheet">
-         <string>background-color:#ffffff; border: 1px solid #d8d8d8; border-radius: 12px; padding: 10px; font-size: 12pt; width: 200px;</string>
+         <string notr="true">QDateEdit{background:white; border:1px solid #d8d8d8; border-radius:12px; padding:6px 10px;}</string>
+        </property>
+        <property name="displayFormat">
+         <string>dd/MM/yyyy</string>
+        </property>
+        <property name="calendarPopup">
+         <bool>true</bool>
         </property>
        </widget>
       </item>
      </layout>
     </item>
     <item>
-     <layout class="QHBoxLayout">
+     <layout class="QHBoxLayout" name="hlCliente">
+      <property name="spacing">
+       <number>18</number>
+      </property>
       <item>
-       <widget class="QLabel" name="lblNombreCliente">
-        <property name="font">
-         <font>
-          <weight>75</weight>
-          <bold>true</bold>
-         </font>
-        </property>
-        <property name="text">
-         <string>Nombre del Cliente</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <layout class="QHBoxLayout">
+       <layout class="QVBoxLayout" name="vlCliente">
         <item>
-         <widget class="QLineEdit" name="leTelefonoCliente">
+         <widget class="QLabel" name="lblCliente">
           <property name="styleSheet">
-           <string>background-color:#ffffff; border: 1px solid #d8d8d8; border-radius: 12px; padding: 10px; font-size: 12pt; width: 200px;</string>
+           <string notr="true">QLabel{font-weight:600;}</string>
+          </property>
+          <property name="text">
+           <string>Nombre del Cliente</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="leCliente">
+          <property name="styleSheet">
+           <string notr="true">QLineEdit{background:white; border:1px solid #d8d8d8; border-radius:12px; padding:10px;}</string>
           </property>
          </widget>
         </item>
        </layout>
       </item>
       <item>
-       <widget class="QLabel" name="lblTelefonoCliente">
-        <property name="font">
-         <font>
-          <weight>75</weight>
-          <bold>true</bold>
-         </font>
-        </property>
-        <property name="text">
-         <string>Teléfono del Cliente</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLineEdit" name="leNombreCliente">
-        <property name="styleSheet">
-         <string>background-color:#ffffff; border: 1px solid #d8d8d8; border-radius: 12px; padding: 10px; font-size: 12pt; width: 300px;</string>
-        </property>
-       </widget>
+       <layout class="QVBoxLayout" name="vlTelefono">
+        <item>
+         <widget class="QLabel" name="lblTelefono">
+          <property name="styleSheet">
+           <string notr="true">QLabel{font-weight:600;}</string>
+          </property>
+          <property name="text">
+           <string>Teléfono del Cliente</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="leTelefono">
+          <property name="styleSheet">
+           <string notr="true">QLineEdit{background:white; border:1px solid #d8d8d8; border-radius:12px; padding:10px;}</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
      </layout>
     </item>
     <item>
-     <layout class="QHBoxLayout">
+     <layout class="QHBoxLayout" name="hlButtons">
+      <property name="spacing">
+       <number>16</number>
+      </property>
       <item>
        <widget class="QPushButton" name="btnGuardar">
         <property name="styleSheet">
-         <string notr="true">QPushButton {
-    background-color:#1E73E8;
-    color:white;
-    font-size:12pt;
-    border-radius:12px;
-    padding:10px;
-    width:120px;
-    height:40px;
-}
-
-QPushButton:hover {
-    background-color:#155FA1;   /* tono más oscuro al pasar el ratón */
-}
-
-QPushButton:pressed {
-    background-color:#134F84;   /* tono aún más oscuro cuando se pulsa */
-}
-</string>
+         <string notr="true">QPushButton{background:#1E73E8; color:white; font-size:12pt; border-radius:12px; padding:12px 18px;} QPushButton:hover{background:#155FA1;} QPushButton:pressed{background:#134F84;}</string>
         </property>
         <property name="text">
          <string>Guardar</string>
@@ -204,26 +221,22 @@ QPushButton:pressed {
        </widget>
       </item>
       <item>
+       <spacer name="spacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
        <widget class="QPushButton" name="btnCancelar">
         <property name="styleSheet">
-         <string notr="true">QPushButton {
-    background-color:#1E73E8;
-    color:white;
-    font-size:12pt;
-    border-radius:12px;
-    padding:10px;
-    width:120px;
-    height:40px;
-}
-
-QPushButton:hover {
-    background-color:#155FA1;   /* tono más oscuro al pasar el ratón */
-}
-
-QPushButton:pressed {
-    background-color:#134F84;   /* tono aún más oscuro cuando se pulsa */
-}
-</string>
+         <string notr="true">QPushButton{background:#1E73E8; color:white; font-size:12pt; border-radius:12px; padding:12px 18px;} QPushButton:hover{background:#155FA1;} QPushButton:pressed{background:#134F84;}</string>
         </property>
         <property name="text">
          <string>Cancelar</string>
@@ -234,6 +247,7 @@ QPushButton:pressed {
     </item>
    </layout>
   </widget>
+  <widget class="QStatusBar" name="statusbar"/>
  </widget>
  <resources/>
  <connections/>

@@ -1,0 +1,291 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>AsignacionesInvitados</class>
+ <widget class="QMainWindow" name="AsignacionesInvitados">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>940</width>
+    <height>560</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Gestor de Eventos - Los Super Nenes</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="vlMain">
+    <property name="leftMargin">
+     <number>12</number>
+    </property>
+    <property name="topMargin">
+     <number>10</number>
+    </property>
+    <property name="rightMargin">
+     <number>12</number>
+    </property>
+    <property name="bottomMargin">
+     <number>10</number>
+    </property>
+    <item>
+     <widget class="QFrame" name="header">
+      <property name="styleSheet">
+       <string notr="true">QFrame#header{background:#1E73E8; border-radius:6px; padding:12px;}
+QLabel#titulo{color:white; font-size:20pt; font-weight:600;}</string>
+      </property>
+      <layout class="QHBoxLayout" name="hlHeader">
+       <item>
+        <widget class="QLabel" name="titulo">
+         <property name="text">
+          <string>Gestor de Eventos - Los Super Nenes</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="hlCenter">
+      <property name="spacing">
+       <number>16</number>
+      </property>
+      <item>
+       <widget class="QFrame" name="frameAsignaciones">
+        <property name="styleSheet">
+         <string notr="true">QFrame#frameAsignaciones{background:#eeeeee; border:1px solid #cfcfcf; border-radius:8px;}</string>
+        </property>
+        <layout class="QVBoxLayout" name="vlAsignaciones">
+         <property name="leftMargin">
+          <number>14</number>
+         </property>
+         <property name="topMargin">
+          <number>14</number>
+         </property>
+         <property name="rightMargin">
+          <number>14</number>
+         </property>
+         <property name="bottomMargin">
+          <number>14</number>
+         </property>
+         <item>
+          <widget class="QLabel" name="lblAsignaciones">
+           <property name="styleSheet">
+            <string notr="true">QLabel{font-weight:600;}</string>
+           </property>
+           <property name="text">
+            <string>Asignaciones</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QTableWidget" name="tablaAsignaciones">
+           <property name="rowCount">
+            <number>10</number>
+           </property>
+           <property name="columnCount">
+            <number>2</number>
+           </property>
+           <attribute name="horizontalHeaderVisible">
+            <bool>true</bool>
+           </attribute>
+           <attribute name="horizontalHeaderStretchLastSection">
+            <bool>true</bool>
+           </attribute>
+           <attribute name="verticalHeaderVisible">
+            <bool>false</bool>
+           </attribute>
+           <row/>
+           <row/>
+           <row/>
+           <row/>
+           <row/>
+           <row/>
+           <row/>
+           <row/>
+           <row/>
+           <row/>
+           <column>
+            <property name="text">
+             <string>Mesa</string>
+            </property>
+            <property name="font">
+             <font>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>Invitados</string>
+            </property>
+            <property name="font">
+             <font>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
+            </property>
+           </column>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QFrame" name="frameInvitados">
+        <property name="styleSheet">
+         <string notr="true">QFrame#frameInvitados{background:#eeeeee; border:1px solid #cfcfcf; border-radius:8px;}
+QLabel{font-weight:600;}</string>
+        </property>
+        <layout class="QVBoxLayout" name="vlInvitados">
+         <property name="spacing">
+          <number>10</number>
+         </property>
+         <property name="leftMargin">
+          <number>14</number>
+         </property>
+         <property name="topMargin">
+          <number>14</number>
+         </property>
+         <property name="rightMargin">
+          <number>14</number>
+         </property>
+         <property name="bottomMargin">
+          <number>14</number>
+         </property>
+         <item>
+          <widget class="QLabel" name="lblInvitados">
+           <property name="text">
+            <string>Invitados</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QListWidget" name="listaInvitados">
+           <property name="styleSheet">
+            <string notr="true">QListWidget{background:white; border:1px solid #d8d8d8; border-radius:10px;}</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <layout class="QGridLayout" name="gridButtons">
+           <property name="spacing">
+            <number>10</number>
+           </property>
+           <item row="0" column="0">
+            <widget class="QPushButton" name="btnAsignar">
+             <property name="styleSheet">
+              <string notr="true">QPushButton{background:#1E73E8; color:white; font-size:10.5pt; border-radius:10px; padding:8px 16px;} QPushButton:hover{background:#155FA1;} QPushButton:pressed{background:#134F84;}</string>
+             </property>
+             <property name="text">
+              <string>Asignar</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QPushButton" name="btnQuitar">
+             <property name="styleSheet">
+              <string notr="true">QPushButton{background:#e6eefb; color:#1E73E8; font-size:10.5pt; border:1px solid #b9cff6; border-radius:10px; padding:8px 16px;} QPushButton:hover{background:#d9e7fb;} QPushButton:pressed{background:#c9dcf7;}</string>
+             </property>
+             <property name="text">
+              <string>Quitar</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0" colspan="2">
+            <widget class="QPushButton" name="btnEditar">
+             <property name="styleSheet">
+              <string notr="true">QPushButton{background:#e6eefb; color:#1E73E8; font-size:10.5pt; border:1px solid #b9cff6; border-radius:10px; padding:8px 16px;} QPushButton:hover{background:#d9e7fb;} QPushButton:pressed{background:#c9dcf7;}</string>
+             </property>
+             <property name="text">
+              <string>Editar</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0" colspan="2">
+            <widget class="QPushButton" name="btnAuto">
+             <property name="styleSheet">
+              <string notr="true">QPushButton{background:#e6eefb; color:#1E73E8; font-size:10.5pt; border:1px solid #b9cff6; border-radius:10px; padding:8px 16px;} QPushButton:hover{background:#d9e7fb;} QPushButton:pressed{background:#c9dcf7;}</string>
+             </property>
+             <property name="text">
+              <string>Asignación automática</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="0" colspan="2">
+            <widget class="QPushButton" name="btnReiniciar">
+             <property name="styleSheet">
+              <string notr="true">QPushButton{background:#e6eefb; color:#1E73E8; font-size:10.5pt; border:1px solid #b9cff6; border-radius:10px; padding:8px 16px;} QPushButton:hover{background:#d9e7fb;} QPushButton:pressed{background:#c9dcf7;}</string>
+             </property>
+             <property name="text">
+              <string>Reiniciar</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="hlBottom">
+      <property name="spacing">
+       <number>12</number>
+      </property>
+      <item>
+       <widget class="QPushButton" name="btnGuardar">
+        <property name="styleSheet">
+         <string notr="true">QPushButton{background:#1E73E8; color:white; font-size:10.5pt; border-radius:12px; padding:10px 18px;} QPushButton:hover{background:#155FA1;} QPushButton:pressed{background:#134F84;}</string>
+        </property>
+        <property name="text">
+         <string>Guardar Cambios</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btnExportar">
+        <property name="styleSheet">
+         <string notr="true">QPushButton{background:#e6eefb; color:#1E73E8; font-size:10.5pt; border:1px solid #b9cff6; border-radius:12px; padding:10px 18px;} QPushButton:hover{background:#d9e7fb;} QPushButton:pressed{background:#c9dcf7;}</string>
+        </property>
+        <property name="text">
+         <string>Exportar a CSV</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="spacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btnVolver">
+        <property name="styleSheet">
+         <string notr="true">QPushButton{background:#e6eefb; color:#1E73E8; font-size:10.5pt; border:1px solid #b9cff6; border-radius:12px; padding:10px 18px;} QPushButton:hover{background:#d9e7fb;} QPushButton:pressed{background:#c9dcf7;}</string>
+        </property>
+        <property name="text">
+         <string>Volver</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

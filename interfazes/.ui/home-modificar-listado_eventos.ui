@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>EventoMesas</class>
- <widget class="QMainWindow" name="EventoMesas">
+ <class>EventosGestion</class>
+ <widget class="QMainWindow" name="EventosGestion">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>930</width>
-    <height>647</height>
+    <width>900</width>
+    <height>560</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -48,24 +48,35 @@ QLabel#titulo{color:white; font-size:20pt; font-weight:600;}</string>
      </widget>
     </item>
     <item>
-     <widget class="QLabel" name="lblTituloEvento">
-      <property name="styleSheet">
-       <string notr="true">QLabel{font-size:14pt; font-weight:600; color:#333; margin:6px 0;}</string>
-      </property>
-      <property name="text">
-       <string>Comunión Sergio</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-     </widget>
+     <layout class="QHBoxLayout" name="hlSearch">
+      <item>
+       <widget class="QLabel" name="lblBuscar">
+        <property name="font">
+         <font>
+          <weight>75</weight>
+          <bold>true</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>Buscar:</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="leBuscar">
+        <property name="styleSheet">
+         <string notr="true">QLineEdit{background:white; border:1px solid #d8d8d8; border-radius:10px; padding:6px;}</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </item>
     <item>
-     <widget class="QFrame" name="frameMesas">
+     <widget class="QFrame" name="frameTabla">
       <property name="styleSheet">
-       <string notr="true">QFrame#frameMesas{background:#eeeeee; border:1px solid #cfcfcf; border-radius:8px;}</string>
+       <string notr="true">QFrame#frameTabla{background:#e9e9e9; border:1px solid #cfcfcf; border-radius:8px;}</string>
       </property>
-      <layout class="QVBoxLayout" name="vlMesas">
+      <layout class="QVBoxLayout" name="vlTabla">
        <property name="leftMargin">
         <number>10</number>
        </property>
@@ -79,12 +90,12 @@ QLabel#titulo{color:white; font-size:20pt; font-weight:600;}</string>
         <number>10</number>
        </property>
        <item>
-        <widget class="QTableWidget" name="tablaMesas">
+        <widget class="QTableWidget" name="tablaEventos">
          <property name="rowCount">
-          <number>6</number>
+          <number>12</number>
          </property>
          <property name="columnCount">
-          <number>2</number>
+          <number>4</number>
          </property>
          <attribute name="horizontalHeaderVisible">
           <bool>true</bool>
@@ -101,9 +112,15 @@ QLabel#titulo{color:white; font-size:20pt; font-weight:600;}</string>
          <row/>
          <row/>
          <row/>
+         <row/>
+         <row/>
+         <row/>
+         <row/>
+         <row/>
+         <row/>
          <column>
           <property name="text">
-           <string>Mesa</string>
+           <string>ID</string>
           </property>
           <property name="font">
            <font>
@@ -114,7 +131,29 @@ QLabel#titulo{color:white; font-size:20pt; font-weight:600;}</string>
          </column>
          <column>
           <property name="text">
-           <string>Invitados</string>
+           <string>Fecha</string>
+          </property>
+          <property name="font">
+           <font>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>Lugar</string>
+          </property>
+          <property name="font">
+           <font>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>Nombre Evento</string>
           </property>
           <property name="font">
            <font>
@@ -134,9 +173,19 @@ QLabel#titulo{color:white; font-size:20pt; font-weight:600;}</string>
        <number>12</number>
       </property>
       <item>
+       <widget class="QPushButton" name="btnEditar">
+        <property name="styleSheet">
+         <string notr="true">QPushButton{background:#1E73E8; color:white; font-size:10.5pt; border-radius:10px; padding:8px 20px;} QPushButton:hover{background:#155FA1;} QPushButton:pressed{background:#134F84;}</string>
+        </property>
+        <property name="text">
+         <string>Editar</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QPushButton" name="btnExportarCSV">
         <property name="styleSheet">
-         <string notr="true">QPushButton{background:#e6eefb; color:#1E73E8; font-size:10.5pt; border:1px solid #b9cff6; border-radius:10px; padding:8px 16px;} QPushButton:hover{background:#d9e7fb;} QPushButton:pressed{background:#c9dcf7;}</string>
+         <string notr="true">QPushButton{background:#e6eefb; color:#1E73E8; font-size:10.5pt; border:1px solid #b9cff6; border-radius:10px; padding:8px 20px;} QPushButton:hover{background:#d9e7fb;} QPushButton:pressed{background:#c9dcf7;}</string>
         </property>
         <property name="text">
          <string>Exportar a CSV</string>
@@ -144,7 +193,17 @@ QLabel#titulo{color:white; font-size:20pt; font-weight:600;}</string>
        </widget>
       </item>
       <item>
-       <spacer name="spacerButtons">
+       <widget class="QPushButton" name="btnEliminar">
+        <property name="styleSheet">
+         <string notr="true">QPushButton{background:#e6eefb; color:#1E73E8; font-size:10.5pt; border:1px solid #b9cff6; border-radius:10px; padding:8px 20px;} QPushButton:hover{background:#d9e7fb;} QPushButton:pressed{background:#c9dcf7;}</string>
+        </property>
+        <property name="text">
+         <string>Eliminar</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="spacer">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
@@ -157,12 +216,12 @@ QLabel#titulo{color:white; font-size:20pt; font-weight:600;}</string>
        </spacer>
       </item>
       <item>
-       <widget class="QPushButton" name="btnVolver">
+       <widget class="QPushButton" name="btnCancelar">
         <property name="styleSheet">
-         <string notr="true">QPushButton{background:#e6eefb; color:#1E73E8; font-size:10.5pt; border:1px solid #b9cff6; border-radius:10px; padding:8px 16px;} QPushButton:hover{background:#d9e7fb;} QPushButton:pressed{background:#c9dcf7;}</string>
+         <string notr="true">QPushButton{background:#e6eefb; color:#1E73E8; font-size:10.5pt; border:1px solid #b9cff6; border-radius:10px; padding:8px 20px;} QPushButton:hover{background:#d9e7fb;} QPushButton:pressed{background:#c9dcf7;}</string>
         </property>
         <property name="text">
-         <string>Volver</string>
+         <string>Cancelar</string>
         </property>
        </widget>
       </item>
