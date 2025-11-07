@@ -29,15 +29,21 @@
     </property>
     <item>
      <widget class="QFrame" name="headerFrame">
+      <property name="layoutDirection">
+       <enum>Qt::LeftToRight</enum>
+      </property>
       <property name="styleSheet">
        <string notr="true">QFrame#headerFrame{background-color:#1E73E8; border-radius:8px; padding:12px;}
 QLabel#lblTitulo{color:white; font-size:22pt; font-weight:600;}</string>
       </property>
       <layout class="QHBoxLayout" name="headerLayout">
-       <item alignment="Qt::AlignLeft|Qt::AlignVCenter">
+       <item>
         <widget class="QLabel" name="lblTitulo">
          <property name="text">
           <string>Gestor de Eventos - Los Super Nenes</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
          </property>
         </widget>
        </item>
