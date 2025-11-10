@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>960</width>
-    <height>620</height>
+    <width>953</width>
+    <height>611</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -198,6 +198,33 @@ QLabel#titulo{color:white; font-size:22pt; font-weight:600;}</string>
          <widget class="QLineEdit" name="leTelefono">
           <property name="styleSheet">
            <string notr="true">QLineEdit{background:white; border:1px solid #d8d8d8; border-radius:12px; padding:10px;}</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QVBoxLayout" name="vlUbicacion">
+        <item>
+         <widget class="QLabel" name="lblUbicacion">
+          <property name="styleSheet">
+           <string notr="true">QLabel{font-weight:600;}</string>
+          </property>
+          <property name="text">
+           <string>Ubicación</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="leUbicacion">
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>36</height>
+           </size>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">QLineEdit{border:1px solid #d8d8d8;border-radius:10px;padding:6px 10px;}</string>
           </property>
          </widget>
         </item>
