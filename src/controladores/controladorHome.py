@@ -19,7 +19,7 @@ if interface_path not in sys.path:
 
 from interfazHome import Ui_MainWindow
 from interfazHomeEvento import Ui_EventosListado
-from interfazHomeParticipantes import Ui_HomeParticipantes
+from interfazHomeModificarListadoEventosEvento import Ui_EventoEditar
 from interfazHomeModificarListadoEventos import Ui_EventosGestion
 
 class ControladorHome:
@@ -48,7 +48,7 @@ class ControladorHome:
 
     def abrir_nuevo_evento(self):
         self.nuevo_window = QMainWindow() 
-        nuevo_ui = Ui_HomeParticipantes() 
+        nuevo_ui = Ui_EventoEditar() 
         nuevo_ui.setupUi(self.nuevo_window)
         
         self.nuevo_window.show()
