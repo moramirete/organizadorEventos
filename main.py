@@ -25,19 +25,34 @@ from interfazHome import Ui_MainWindow
 
 def run_application():
     """Función principal para inicializar y ejecutar la aplicación."""
-    
+    print("DEBUG: run_application start")
     app = QApplication(sys.argv)
-    
+    print("DEBUG: QApplication created")
     MainWindow = QMainWindow()
     ui = Ui_MainWindow()
     ui.setupUi(MainWindow)
+    print("DEBUG: UI setup complete")
     
     # Inicializa el ControladorHome, que gestionará el flujo inicial
     controller = ControladorHome(MainWindow, ui)
+    print("DEBUG: ControladorHome initialized")
     
     MainWindow.show()
-    
-    sys.exit(app.exec_())
+    print("DEBUG: MainWindow shown")
+    try:
+        ret = app.exec_()
+        print(f"DEBUG: app.exec_ returned {ret}")
+        # Avoid calling sys.exit here so we keep the debug prints visible
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        print('Error en el bucle de la aplicación:', e)
+    print("DEBUG: run_application end")
 
 if __name__ == "__main__":
-    run_application()
+    try:
+        run_application()
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        print('Error al iniciar la aplicación:', e)
