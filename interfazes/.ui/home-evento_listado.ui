@@ -98,7 +98,7 @@ QLabel#titulo{color:white; font-size:20pt; font-weight:600;}</string>
           <number>6</number>
          </property>
          <property name="columnCount">
-          <number>4</number>
+          <number>3</number>
          </property>
          <attribute name="horizontalHeaderVisible">
           <bool>true</bool>
@@ -129,17 +129,6 @@ QLabel#titulo{color:white; font-size:20pt; font-weight:600;}</string>
          <column>
           <property name="text">
            <string>Fecha</string>
-          </property>
-          <property name="font">
-           <font>
-            <weight>75</weight>
-            <bold>true</bold>
-           </font>
-          </property>
-         </column>
-         <column>
-          <property name="text">
-           <string>Lugar</string>
           </property>
           <property name="font">
            <font>
