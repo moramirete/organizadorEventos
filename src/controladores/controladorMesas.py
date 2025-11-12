@@ -103,3 +103,124 @@ class ControladorMesas:
             self.mesas.append({'id': i+1, 'capacidad': int(self.evento.inv_por_mesa), 'invitados': []})
 
         self.reiniciar_asignaciones()
+
+    def reiniciar_asignaciones(self):
+        # vaciar asignaciones y llenar lista de invitados
+        for m in self.mesas:
+            m['invitados'] = []
+        self.refresh_ui()
+
+    def refresh_ui(self):
+        # actualizar tabla de mesas
+        tabla = self.ui.tablaAsignaciones
+        tabla.setRowCount(len(self.mesas))
+        for i, m in enumerate(self.mesas):
+            tabla.setItem(i, 0, QtWidgets.QTableWidgetItem(str(m['id'])))
+            tabla.setItem(i, 1, QtWidgets.QTableWidgetItem(', '.join([p for p in m['invitados']])))
+
+        # lista de invitados sin asignar
+        lista = self.ui.listaInvitados
+        lista.clear()
+        participantes = [p.nombre for p in (self.evento.participantes if self.evento else [])]
+        asignados = []
+        for m in self.mesas:
+            asignados.extend(m['invitados'])
+        for nombre in participantes:
+            if nombre not in asignados:
+                lista.addItem(nombre)
+
+    def asignacion_automatica(self):
+        # Si existe el algoritmo, usarlo; sino fallback al reparto simple
+        if asignar_mesas_optimizando is None or AlgPersona is None:
+            # fallback simple: reparto equitativo
+            if not self.mesas or not self.evento:
+                QtWidgets.QMessageBox.warning(self.main_window, 'Error', 'No hay mesas o evento')
+                return
+            for m in self.mesas:
+                m['invitados'] = []
+            participantes = [p.nombre for p in self.evento.participantes]
+            mesa_index = 0
+            for nombre in participantes:
+                placed = False
+                for _ in range(len(self.mesas)):
+                    m = self.mesas[mesa_index]
+                    if len(m['invitados']) < m['capacidad']:
+                        m['invitados'].append(nombre)
+                        placed = True
+                        mesa_index = (mesa_index + 1) % len(self.mesas)
+                        break
+                    mesa_index = (mesa_index + 1) % len(self.mesas)
+                if not placed:
+                    QtWidgets.QMessageBox.warning(self.main_window, 'Límite', f'No hay espacio para {nombre}')
+            self.refresh_ui()
+            return
+
+        # Preparar participantes para el algoritmo
+        participantes_obj = []
+        for p in (self.evento.participantes if self.evento else []):
+            amistades = []
+            enemistades = []
+            # las cadenas de 'prefiere' y 'no_prefiere' pueden llevar comas
+            if getattr(p, 'prefiere', ''):
+                amistades = [s.strip() for s in p.prefiere.split(',') if s.strip()]
+            if getattr(p, 'no_prefiere', ''):
+                enemistades = [s.strip() for s in p.no_prefiere.split(',') if s.strip()]
+            participantes_obj.append(AlgPersona(p.nombre, amistades=amistades, enemistades=enemistades))
+
+        tamano_mesa = int(self.evento.inv_por_mesa) if self.evento else 4
+        solucion, excluidos = asignar_mesas_optimizando(participantes_obj, tamano_mesa)
+
+        if solucion is None:
+            QtWidgets.QMessageBox.warning(self.main_window, 'No factible', 'No se pudo asignar mesas con el algoritmo.')
+            return
+
+        # Reconstruir mesas según solución
+        num_mesas_needed = max(solucion.values()) + 1 if solucion else (self.evento.num_mesas if self.evento else len(self.mesas))
+        self.mesas = []
+        for i in range(num_mesas_needed):
+            capacidad = int(self.evento.inv_por_mesa) if self.evento else 4
+            self.mesas.append({'id': i+1, 'capacidad': capacidad, 'invitados': []})
+
+        for nombre, mesa_idx in solucion.items():
+            if 0 <= mesa_idx < len(self.mesas):
+                self.mesas[mesa_idx]['invitados'].append(nombre)
+
+        if excluidos:
+            QtWidgets.QMessageBox.information(self.main_window, 'Excluidos', 'No se pudo ubicar a: ' + ', '.join(excluidos))
+
+        self.refresh_ui()
+
+    def asignar_seleccionado(self):
+        lista = self.ui.listaInvitados
+        item = lista.currentItem()
+        if item is None:
+            QtWidgets.QMessageBox.warning(self.main_window, 'Asignar', 'Selecciona un invitado')
+            return
+        nombre = item.text()
+        fila = self.ui.tablaAsignaciones.currentRow()
+        if fila < 0:
+            QtWidgets.QMessageBox.warning(self.main_window, 'Asignar', 'Selecciona una mesa')
+            return
+        m = self.mesas[fila]
+        if len(m['invitados']) >= m['capacidad']:
+            QtWidgets.QMessageBox.warning(self.main_window, 'Asignar', 'La mesa está llena')
+            return
+        m['invitados'].append(nombre)
+        # quitar de la lista
+        lista.takeItem(lista.currentRow())
+        self.refresh_ui()
+
+    def quitar_seleccionado(self):
+        fila = self.ui.tablaAsignaciones.currentRow()
+        if fila < 0:
+            QtWidgets.QMessageBox.warning(self.main_window, 'Quitar', 'Selecciona una mesa')
+            return
+        m = self.mesas[fila]
+        # tomar último invitado
+        if not m['invitados']:
+            QtWidgets.QMessageBox.warning(self.main_window, 'Quitar', 'No hay invitados en esa mesa')
+            return
+        nombre = m['invitados'].pop()
+        # añadir a lista de invitados
+        self.ui.listaInvitados.addItem(nombre)
+        self.refresh_ui()

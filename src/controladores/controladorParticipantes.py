@@ -17,7 +17,7 @@ if src_path not in sys.path:
 from interfazHomeParticipantesMesas import Ui_ParticipantsManager
 from controladorMesas import ControladorMesas
 from interfazHomeModificarListadoEventosAsignacionInvitados import Ui_AsignacionesInvitados
-from modelos.participante import Participante
+from modelos.participantes import Participante
 from PyQt5 import QtWidgets
 
 class ControladorParticipantes:

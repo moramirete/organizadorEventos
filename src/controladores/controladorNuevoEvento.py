@@ -3,7 +3,7 @@ import os
 from PyQt5.QtWidgets import QMainWindow
 
 # Configurar la ruta para importar las interfaces
-current_dir = os.path.dirname(os.path.abspath(_file_))
+current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.abspath(os.path.join(current_dir, '..', '..'))
 interfaces_path = os.path.join(project_root, 'interfazes', 'python')
 if interfaces_path not in sys.path:
@@ -24,7 +24,7 @@ from PyQt5 import QtWidgets, QtCore
 
 class controladorNuevoEvento:
     
-    def _init_(self, main_window, ui, parent_controller):
+    def __init__(self, main_window, ui, parent_controller):
         self.main_window = main_window 
         self.ui = ui
         self.parent_controller = parent_controller
