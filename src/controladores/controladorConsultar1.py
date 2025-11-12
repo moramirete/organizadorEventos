@@ -21,7 +21,7 @@ from interfazHome import Ui_MainWindow
 from interfazHomeEvento import Ui_EventosListado
 from interfazHomeEventoMesas import Ui_EventoMesas
 
-class ControladorHomeEventos:
+class ControladorHome:
     # Esto es para que se inice el controlador
     def __init__(self, main_window: QMainWindow, ui: Ui_MainWindow):
         self.main_window = main_window 
@@ -50,7 +50,7 @@ class ControladorHomeEventos:
 
     def abrir_consultar_eventos(self):
         self.consultar_window = QMainWindow() 
-        consultar_ui = Ui_EventosListado() 
+        consultar_ui = Ui_EventoMesas() 
         consultar_ui.setupUi(self.consultar_window)
         
         self.consultar_window.show()
@@ -82,7 +82,7 @@ if __name__ == "__main__":
     ui = Ui_MainWindow()
     ui.setupUi(MainWindow)
 
-    controller = ControladorHomeEventos(MainWindow, ui)
+    controller = ControladorHome(MainWindow, ui)
     
     MainWindow.show()
     sys.exit(app.exec_())
