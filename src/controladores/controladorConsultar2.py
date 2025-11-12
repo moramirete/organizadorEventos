@@ -64,6 +64,8 @@ class ControladorConsultar2:
         if not filename:
             return
 
+        # Aqui hago un try except por si ocurre un error, que el programa siga en ejecución.
+
         try:
             with open(filename, 'w', newline='', encoding='utf-8-sig') as f:
                 writer = csv.writer(f)
