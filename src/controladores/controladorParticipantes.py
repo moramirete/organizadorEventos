@@ -12,7 +12,7 @@ if interfaces_path not in sys.path:
 
 from interfazHomeParticipantesMesas import Ui_ParticipantsManager
 from controladorMesas import ControladorMesas
-
+from interfazHomeModificarListadoEventosAsignacionInvitados import Ui_AsignacionesInvitados
 
 class ControladorParticipantes:
     
@@ -28,12 +28,12 @@ class ControladorParticipantes:
         # Conectar el botón Siguiente
         self.ui.btnSiguiente.clicked.connect(self.ir_siguiente_interfaz)
         
-        # Conectar el botón Cancelar (volver atrás)
-        self.ui.btnCancelar.clicked.connect(self.volver_ventana_anterior)
+        # Conectar el botón Volver
+        self.ui.btnVolver.clicked.connect(self.volver_ventana_anterior)
 
     def ir_siguiente_interfaz(self):
         # Importar la interfaz de mesas
-        from interfazHomeModificarListadoEventosAsignacionInvitados import Ui_AsignacionesInvitados
+        
         
         # Crear ventana de mesas
         self.mesas_window = QMainWindow() 

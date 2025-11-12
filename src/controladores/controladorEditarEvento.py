@@ -13,6 +13,13 @@ from interfazHomeModificarListadoEventosEvento import Ui_EventoEditar
 from interfazHomeParticipantesMesas import Ui_ParticipantsManager
 from controladorParticipantes import ControladorParticipantes
 
+src_path = os.path.join(project_root, 'src')
+if src_path not in sys.path:
+    sys.path.append(src_path)
+
+from modelos.evento import Evento
+from PyQt5 import QtWidgets
+
 
 class controladorEditarEvento:
     
@@ -21,6 +28,8 @@ class controladorEditarEvento:
         self.ui = ui
         self.parent_controller = parent_controller
         self.siguiente_window = None
+        self.evento = Evento()
+        self.cambios_guardados = False
 
         self.conectar_botones()
         
@@ -31,7 +40,18 @@ class controladorEditarEvento:
         # Conectar botón Cancelar
         self.ui.btnCancelar.clicked.connect(self.volver_ventana_anterior)
 
+        # Botón guardar
+        try:
+            self.ui.btnGuardarCambios.clicked.connect(self.guardar_cambios)
+        except Exception:
+            pass
+
     def ir_siguiente_interfaz(self):
+        # Sólo permitir si guardado
+        if not self.cambios_guardados:
+            QtWidgets.QMessageBox.warning(self.main_window, 'Guardar Cambios', 'Debes guardar los cambios antes de continuar.')
+            return
+
         # Crear ventana de participantes
         self.siguiente_window = QMainWindow() 
         siguiente_ui = Ui_ParticipantsManager() 
@@ -43,10 +63,29 @@ class controladorEditarEvento:
             siguiente_ui, 
             self  
         )
-        
+
+        # Pasar evento
+        self.participantes_controller.evento = self.evento
+
         # Mostrar ventana de participantes y ocultar la actual
         self.siguiente_window.show()
         self.main_window.hide()
+
+    def guardar_cambios(self):
+        nombre = self.ui.leNombre.text().strip()
+        num_mesas = int(self.ui.sbMesas.value())
+        inv_por_mesa = int(self.ui.sbInvPorMesa.value())
+        fecha = self.ui.deFecha.date().toString('yyyy-MM-dd')
+        cliente = self.ui.leCliente.text().strip()
+        telefono = self.ui.leTelefono.text().strip()
+
+        if not nombre or num_mesas or inv_por_mesa or fecha or cliente or telefono:
+            QtWidgets.QMessageBox.warning(self.main_window, 'Validación', 'Debes rellenar todos los campos.')
+            return
+
+        self.evento = Evento(nombre, num_mesas, inv_por_mesa, fecha, cliente, telefono)
+        self.cambios_guardados = True
+        QtWidgets.QMessageBox.information(self.main_window, 'Guardar', 'Evento guardado correctamente.')
     
     def volver_ventana_anterior(self):
         # Mostrar ventana anterior
