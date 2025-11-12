@@ -16,6 +16,7 @@ from interfazHomeModificarListadoEventosEvento import Ui_EventoEditar
 from interfazHomeModificarListadoEventos import Ui_EventosGestion
 from controladorConsultar1 import ControladorConsultar1
 from controladorModificarEventos import controladorModificarEventos 
+from controladorNuevoEvento import controladorNuevoEvento
 
 class ControladorHome:
     def __init__(self, main_window: QMainWindow, ui: Ui_MainWindow):
@@ -54,6 +55,14 @@ class ControladorHome:
         self.nuevo_window = QMainWindow() 
         nuevo_ui = Ui_EventoEditar() 
         nuevo_ui.setupUi(self.nuevo_window)
+
+        # Uso nuevo_ui y nuevo_window para el nuevo controller,
+        # y se almacena separado así no se sobreescribe consultar_controller.
+        self.nuevo_controller = controladorNuevoEvento(
+            self.nuevo_window, 
+            nuevo_ui, 
+            self  
+        )
         
         self.nuevo_window.show()
         # self.main_window.hide() <--- Removido/Comentado
