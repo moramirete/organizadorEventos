@@ -5,6 +5,8 @@ from PyQt5.QtWidgets import QMainWindow, QApplication
 from PyQt5 import QtWidgets
 
 # --- INICIO: CORRECCIÓN DE RUTA DE IMPORTACIÓN PARA MODULOS ---
+
+# Aqui lo que hace es modificar la ruta para que el controller se conecte
 current_script_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.abspath(os.path.join(current_script_dir, '..', '..'))
 interface_path = os.path.join(project_root, 'interfazes', 'python')
@@ -66,11 +68,10 @@ class ControladorConsultar1:
         self.main_window.hide()
 
     def exportar_csv(self):
-        """Exporta el contenido de la tabla `tablaEventos` a un archivo CSV.
+        # Exporta el contenido de la tabla `tablaEventos` a un archivo CSV.
 
-        Abre un diálogo para elegir la ruta de guardado y escribe las cabeceras y filas
-        actuales de la QTableWidget.
-        """
+        # Abre un diálogo para elegir la ruta de guardado y escribe las cabeceras y filas actuales de la QTableWidget.
+        
         tabla = getattr(self.ui, 'tablaEventos', None)
         if tabla is None:
             QtWidgets.QMessageBox.warning(self.main_window, 'Exportar CSV', 'No se encontró la tabla de eventos.')
