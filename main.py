@@ -2,23 +2,23 @@ import sys
 import os
 from PyQt5.QtWidgets import QMainWindow, QApplication
 
-# --- INICIO: CORRECCIÓN DE RUTA DE IMPORTACIÓN PARA MÓDULOS ---
-# 1. Determina la ruta absoluta del directorio actual (la raíz del proyecto).
-current_script_dir = os.path.dirname(os.path.abspath(__file__))
-project_root = current_script_dir 
+# --- CORRECCIÓN DE RUTAS GENERAL PARA TODO EL PROYECTO ---
+# Se asume que este archivo está en la raíz del proyecto.
+project_root = os.path.dirname(os.path.abspath(__file__))
 
-# 2. Define las rutas de las interfaces y controladores.
+# Rutas a añadir:
 interface_path = os.path.join(project_root, 'interfazes', 'python')
 controladores_path = os.path.join(project_root, 'src', 'controladores')
 
-# 3. Añade ambas rutas a sys.path para que Python pueda encontrar los módulos.
+# Añadir ambas rutas al sistema:
 if interface_path not in sys.path:
     sys.path.append(interface_path)
 
 if controladores_path not in sys.path:
     sys.path.append(controladores_path)
-# --- FIN: CORRECCIÓN DE RUTA DE IMPORTACIÓN ---
+# --------------------------------------------------------
 
+# Importar las clases controladoras e interfaces
 from controladorHome import ControladorHome
 from interfazHome import Ui_MainWindow
 
@@ -32,9 +32,11 @@ def run_application():
     ui = Ui_MainWindow()
     ui.setupUi(MainWindow)
     
+    # Inicializa el ControladorHome, que gestionará el flujo inicial
     controller = ControladorHome(MainWindow, ui)
     
     MainWindow.show()
+    
     sys.exit(app.exec_())
 
 if __name__ == "__main__":
