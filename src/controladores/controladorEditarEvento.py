@@ -79,7 +79,7 @@ class controladorEditarEvento:
         cliente = self.ui.leCliente.text().strip()
         telefono = self.ui.leTelefono.text().strip()
 
-        if not nombre or num_mesas or inv_por_mesa or fecha or cliente or telefono:
+        if not nombre:
             QtWidgets.QMessageBox.warning(self.main_window, 'Validación', 'Debes rellenar todos los campos.')
             return
 
