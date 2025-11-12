@@ -14,6 +14,8 @@ from interfazHome import Ui_MainWindow
 from interfazHomeEvento import Ui_EventosListado
 from interfazHomeEventoMesas import Ui_EventoMesas
 
+from controladorConsultar2 import ControladorConsultar2
+
 
 class ControladorConsultar1:
     
@@ -38,6 +40,12 @@ class ControladorConsultar1:
         self.consultar_window = QMainWindow() 
         consultar_ui = Ui_EventoMesas() 
         consultar_ui.setupUi(self.consultar_window)
+
+        self.consultar_controller = ControladorConsultar2(
+            self.consultar_window, 
+            consultar_ui, 
+            self  
+        )
         
         self.consultar_window.show()
         # Ocultamos la ventana actual (Listado de Eventos)
