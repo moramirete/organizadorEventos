@@ -75,6 +75,9 @@ QLabel#lblTitulo{color:white; font-size:22pt; font-weight:600;}</string>
          </property>
          <item>
           <widget class="QTableWidget" name="tablaParticipantes">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
              <horstretch>0</horstretch>
@@ -290,17 +293,14 @@ QLabel{font-weight:600; color:#333;}</string>
        </widget>
       </item>
       <item>
-       <spacer name="spacerMiddle">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
+       <widget class="QPushButton" name="btnImportarCSV">
+        <property name="styleSheet">
+         <string notr="true">QPushButton{background:#cfe0fb; color:#1E73E8; font-size:11pt; border:1px solid #b9cff6; border-radius:12px; padding:10px 18px;} QPushButton:hover{background:#bfd6fb;} QPushButton:pressed{background:#b2cdf7;}</string>
         </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
+        <property name="text">
+         <string>Importar CSV</string>
         </property>
-       </spacer>
+       </widget>
       </item>
       <item>
        <widget class="QPushButton" name="btnSiguiente">
@@ -311,19 +311,6 @@ QLabel{font-weight:600; color:#333;}</string>
          <string>Siguiente</string>
         </property>
        </widget>
-      </item>
-      <item>
-       <spacer name="spacerMiddle2">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
       </item>
       <item>
        <widget class="QPushButton" name="btnCancelar">
