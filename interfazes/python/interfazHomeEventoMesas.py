@@ -33,7 +33,6 @@ class Ui_EventoMesas(object):
         self.vlMain.addWidget(self.header)
         self.lblTituloEvento = QtWidgets.QLabel(self.centralwidget)
         self.lblTituloEvento.setStyleSheet("QLabel{font-size:14pt; font-weight:600; color:#333; margin:6px 0;}")
-        self.lblTituloEvento.setText("")
         self.lblTituloEvento.setAlignment(QtCore.Qt.AlignCenter)
         self.lblTituloEvento.setObjectName("lblTituloEvento")
         self.vlMain.addWidget(self.lblTituloEvento)
@@ -90,6 +89,7 @@ class Ui_EventoMesas(object):
         _translate = QtCore.QCoreApplication.translate
         EventoMesas.setWindowTitle(_translate("EventoMesas", "Gestor de Eventos - Los Super Nenes"))
         self.titulo.setText(_translate("EventoMesas", "Gestor de Eventos - Los Super Nenes"))
+        self.lblTituloEvento.setText(_translate("EventoMesas", "Comunión Sergio"))
         item = self.tablaMesas.horizontalHeaderItem(0)
         item.setText(_translate("EventoMesas", "Mesa"))
         item = self.tablaMesas.horizontalHeaderItem(1)
