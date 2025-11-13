@@ -44,6 +44,16 @@ class controladorModificarEventos:
             self.ui.leBuscar.textChanged.connect(self.buscar_eventos)
         except Exception:
             pass
+        # Exportar CSV del listado visible
+        try:
+            self.ui.btnExportarCSV.clicked.connect(self.exportar_csv)
+        except Exception:
+            pass
+        # Eliminar evento seleccionado (respetando el filtro de búsqueda)
+        try:
+            self.ui.btnEliminar.clicked.connect(self.eliminar_evento)
+        except Exception:
+            pass
 
     def cargar_eventos(self):
         tabla = getattr(self.ui, 'tablaEventos', None)
@@ -139,6 +149,8 @@ class controladorModificarEventos:
         
         self.editar_window.show()
         self.main_window.hide()
+
+    
     
     def volver_ventana_principal(self):
         # Recargar eventos antes de mostrar
@@ -154,3 +166,107 @@ class controladorModificarEventos:
         """Método para mostrar la ventana y recargar eventos"""
         self.cargar_eventos()
         self.main_window.show()
+    
+    def obtener_eventos_visibles(self):
+        texto_busqueda = getattr(self.ui, 'leBuscar', None)
+        eventos = getattr(self.parent_controller, 'eventos', [])
+        if texto_busqueda is None:
+            return list(eventos)
+        txt = texto_busqueda.text().strip().lower()
+        if not txt:
+            return list(eventos)
+        visibles = []
+        for ev in eventos:
+            if (txt in getattr(ev, 'nombre', '').lower() or
+                txt in getattr(ev, 'fecha', '').lower() or
+                txt in getattr(ev, 'cliente', '').lower() or
+                txt in getattr(ev, 'telefono', '').lower()):
+                visibles.append(ev)
+        return visibles
+
+    def exportar_csv(self):
+        tabla = getattr(self.ui, 'tablaEventos', None)
+        if tabla is None:
+            QtWidgets.QMessageBox.warning(self.main_window, 'Exportar CSV', 'No se encontró la tabla de eventos.')
+            return
+
+        import csv
+        options = QtWidgets.QFileDialog.Options()
+        filename, _ = QtWidgets.QFileDialog.getSaveFileName(
+            self.main_window,
+            'Guardar CSV',
+            '',
+            'CSV Files (*.csv);;All Files (*)',
+            options=options
+        )
+        if not filename:
+            return
+
+        try:
+            with open(filename, 'w', newline='', encoding='utf-8-sig') as f:
+                writer = csv.writer(f)
+                # Cabeceras visibles en la tabla
+                cabecera = []
+                for col in range(tabla.columnCount()):
+                    item = tabla.horizontalHeaderItem(col)
+                    cabecera.append(item.text() if item is not None else '')
+                writer.writerow(cabecera)
+
+                # Filas visibles tal como se muestran
+                for row in range(tabla.rowCount()):
+                    datos = []
+                    for col in range(tabla.columnCount()):
+                        item = tabla.item(row, col)
+                        datos.append(item.text() if item is not None else '')
+                    writer.writerow(datos)
+
+            QtWidgets.QMessageBox.information(self.main_window, 'Exportar CSV', f'CSV exportado correctamente a:\n{filename}')
+        except Exception as e:
+            QtWidgets.QMessageBox.critical(self.main_window, 'Exportar CSV', f'Error al exportar CSV:\n{e}')
+
+    def eliminar_evento(self):
+        tabla = getattr(self.ui, 'tablaEventos', None)
+        if tabla is None:
+            return
+
+        fila = tabla.currentRow()
+        if fila < 0:
+            QtWidgets.QMessageBox.warning(self.main_window, 'Eliminar', 'Selecciona un evento')
+            return
+
+        # Encontrar el evento real basado en la vista filtrada
+        eventos_visibles = self.obtener_eventos_visibles()
+        if fila >= len(eventos_visibles):
+            QtWidgets.QMessageBox.warning(self.main_window, 'Eliminar', 'Selección no válida')
+            return
+
+        evento_obj = eventos_visibles[fila]
+        nombre = getattr(evento_obj, 'nombre', '¿evento?')
+
+        resp = QtWidgets.QMessageBox.question(
+            self.main_window,
+            'Confirmar eliminación',
+            f'¿Seguro que deseas eliminar el evento "{nombre}"?',
+            QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No
+        )
+        if resp != QtWidgets.QMessageBox.Yes:
+            return
+
+        # Eliminar por identidad del listado global
+        eventos_globales = getattr(self.parent_controller, 'eventos', [])
+        try:
+            idx = next(i for i, ev in enumerate(eventos_globales) if ev is evento_obj)
+            eventos_globales.pop(idx)
+        except StopIteration:
+            # Si no se encontró por identidad, intentar por coincidencia de atributos principales
+            for i, ev in enumerate(eventos_globales):
+                if (getattr(ev, 'nombre', None) == getattr(evento_obj, 'nombre', None) and
+                    getattr(ev, 'fecha', None) == getattr(evento_obj, 'fecha', None) and
+                    getattr(ev, 'cliente', None) == getattr(evento_obj, 'cliente', None) and
+                    getattr(ev, 'telefono', None) == getattr(evento_obj, 'telefono', None)):
+                    eventos_globales.pop(i)
+                    break
+
+        # Refrescar la vista según el filtro actual
+        self.buscar_eventos()
+        QtWidgets.QMessageBox.information(self.main_window, 'Eliminar', 'Evento eliminado correctamente')
