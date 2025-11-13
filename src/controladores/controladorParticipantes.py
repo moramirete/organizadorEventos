@@ -1,6 +1,5 @@
 import sys
 import os
-import csv
 from PyQt5.QtWidgets import QMainWindow
 from PyQt5 import QtWidgets
 
@@ -57,11 +56,6 @@ class ControladorParticipantes:
 
         try:
             self.ui.btnCancelar.clicked.connect(self.volver_ventana_anterior)
-        except Exception:
-            pass
-
-        try:
-            self.ui.btnImportarCSV.clicked.connect(self.importar_csv)
         except Exception:
             pass
 
@@ -146,69 +140,3 @@ class ControladorParticipantes:
     def guardar_cambios(self):
         # Para simplicidad, guardar ya está hecho al añadir; aquí solo confirmamos
         QtWidgets.QMessageBox.information(self.main_window, 'Guardar', 'Participantes guardados')
-
-    def importar_csv(self):
-        """
-        Permite seleccionar un fichero CSV e importar participantes.
-        Formato esperado por columna: Nombre, Prefiere, NoPrefiere
-        Detecta delimitador (coma/;/tab) y salta cabecera si existe.
-        """
-        options = QtWidgets.QFileDialog.Options()
-        filename, _ = QtWidgets.QFileDialog.getOpenFileName(
-            self.main_window,
-            'Seleccionar CSV',
-            '',
-            'CSV Files (*.csv);;All Files (*)',
-            options=options
-        )
-        if not filename:
-            return
-
-        try:
-            with open(filename, 'r', encoding='utf-8-sig', newline='') as f:
-                    sample = f.read(2048)
-                    f.seek(0)
-                    try:
-                        dialect = csv.Sniffer().sniff(sample, delimiters=',;|\t')
-                        delimiter = dialect.delimiter
-                    except Exception:
-                        delimiter = ','
-
-                    reader = csv.reader(f, delimiter=delimiter)
-                    rows = list(reader)
-
-            if not rows:
-                QtWidgets.QMessageBox.warning(self.main_window, 'Importar CSV', 'El archivo está vacío.')
-                return
-            
-        # Detectar si existe cabecera (buscando palabras clave)
-            first = rows[0]
-            header_lower = [c.strip().lower() for c in first]
-            start_index = 0
-            if any('nombre' in c for c in header_lower) or any('prefiere' in c for c in header_lower) or any('acompañ' in c for c in header_lower) or any('no' in c for c in header_lower):
-                start_index = 1
-
-            added = 0
-            for row in rows[start_index:]:
-                if not row or all(not cell.strip() for cell in row):
-                    continue
-                nombre = row[0].strip() if len(row) > 0 else ''
-                prefiere = row[1].strip() if len(row) > 1 else ''
-                no_prefiere = row[2].strip() if len(row) > 2 else ''
-                if not nombre:
-                    continue
-
-                p = Participante(nombre, prefiere, no_prefiere)
-                evento = getattr(self, 'evento', None)
-                if evento is not None:
-                    evento.agregar_participante(p)
-                else:
-                    lst = getattr(self.parent_controller, 'evento', None)
-                    if lst is not None:
-                        lst.agregar_participante(p)
-                added += 1
-
-            self.refrescar_tabla()
-            QtWidgets.QMessageBox.information(self.main_window, 'Importar CSV', f'Importados {added} participantes.')
-        except Exception as e:
-            QtWidgets.QMessageBox.critical(self.main_window, 'Importar CSV', f'Error al importar CSV:\n{e}')
