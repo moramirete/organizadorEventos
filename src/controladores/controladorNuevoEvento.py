@@ -1,8 +1,9 @@
 import sys
 import os
 from PyQt5.QtWidgets import QMainWindow
+from PyQt5 import QtWidgets, QtCore
 
-# Configurar la ruta para importar las interfaces
+# Preparo la ruta para poder importar las interfaces .py
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.abspath(os.path.join(current_dir, '..', '..'))
 interfaces_path = os.path.join(project_root, 'interfazes', 'python')
@@ -13,13 +14,12 @@ from interfazHomeModificarListadoEventosEvento import Ui_EventoEditar
 from interfazHomeParticipantesMesas import Ui_ParticipantsManager
 from controladorParticipantes import ControladorParticipantes
 
-# Asegurar que podemos importar los modelos (src en sys.path)
+# Añado src al path para poder importar los modelos
 src_path = os.path.join(project_root, 'src')
 if src_path not in sys.path:
     sys.path.append(src_path)
 
 from modelos.evento import Evento
-from PyQt5 import QtWidgets, QtCore
 
 
 class controladorNuevoEvento:
@@ -27,54 +27,61 @@ class controladorNuevoEvento:
     def __init__(self, main_window, ui, parent_controller):
         self.main_window = main_window 
         self.ui = ui
+        # Referencia al controlador principal (Home)
         self.parent_controller = parent_controller
         self.siguiente_window = None
-        # Estado de guardado
+
+        # Evento que se rellena con los datos del formulario
         self.evento = Evento()
+        # Para saber si se han guardado los cambios
         self.cambios_guardados = False
 
         self.conectar_botones()
         
     def conectar_botones(self):
-        # Conectar botón Siguiente
+        # Botón para pasar a la pantalla de participantes/mesas
         self.ui.btnSiguiente.clicked.connect(self.ir_siguiente_interfaz)
         
-        # Conectar botón Guardar
+        # Botón para guardar el evento
         try:
             self.ui.btnGuardarCambios.clicked.connect(self.guardar_cambios)
         except Exception:
             pass
 
-        # Conectar botón Cancelar
+        # Botón para volver al menú principal
         self.ui.btnCancelar.clicked.connect(self.volver_ventana_anterior)
 
     def ir_siguiente_interfaz(self):
-        # Sólo dejar pasar si se han guardado los cambios en esta ventana
+        # Solo dejo continuar si antes se han guardado los cambios
         if not self.cambios_guardados:
-            QtWidgets.QMessageBox.warning(self.main_window, 'Guardar Cambios', 'Debes guardar los cambios antes de continuar.')
+            QtWidgets.QMessageBox.warning(
+                self.main_window,
+                'Guardar Cambios',
+                'Debes guardar los cambios antes de continuar.'
+            )
             return
 
-        # Crear ventana de participantes
-        self.siguiente_window = QMainWindow() 
-        siguiente_ui = Ui_ParticipantsManager() 
+        # Creo la ventana para gestionar participantes y mesas
+        self.siguiente_window = QMainWindow()
+        siguiente_ui = Ui_ParticipantsManager()
         siguiente_ui.setupUi(self.siguiente_window)
         
-        # Crear controlador de participantes
+        # Creo el controlador de participantes y le paso este como padre
         self.participantes_controller = ControladorParticipantes(
-            self.siguiente_window, 
-            siguiente_ui, 
-            self  
+            self.siguiente_window,
+            siguiente_ui,
+            self
         )
 
-        # Pasar el evento guardado al controlador de participantes
+        # Paso el evento al controlador de participantes
         self.participantes_controller.evento = self.evento
         
-        # Mostrar ventana de participantes y ocultar la actual
+        # Muestro la nueva ventana y oculto la actual
         self.siguiente_window.show()
         self.main_window.hide()
 
     def guardar_cambios(self):
-        # Leer campos y guardar en el POJO Evento
+        # Cojo los datos escritos en el formulario
         nombre = self.ui.leNombre.text().strip()
         num_mesas = int(self.ui.sbMesas.value())
         inv_por_mesa = int(self.ui.sbInvPorMesa.value())
@@ -82,22 +89,31 @@ class controladorNuevoEvento:
         cliente = self.ui.leCliente.text().strip()
         telefono = self.ui.leTelefono.text().strip()
 
+        # Compruebo que al menos haya nombre
         if not nombre:
-            QtWidgets.QMessageBox.warning(self.main_window, 'Validación', 'El nombre del evento es obligatorio.')
+            QtWidgets.QMessageBox.warning(
+                self.main_window,
+                'Validación',
+                'El nombre del evento es obligatorio.'
+            )
             return
 
-        # Guardar en el objeto evento
+        # Guardo los datos en el objeto Evento
         self.evento = Evento(nombre, num_mesas, inv_por_mesa, fecha, cliente, telefono)
         self.cambios_guardados = True
 
-        # 👉 GUARDAR EN LA LISTA GLOBAL DEL HOME
+        # Añado el evento a la lista general del Home si aún no está
         if self.evento not in self.parent_controller.eventos:
             self.parent_controller.eventos.append(self.evento)
 
-        QtWidgets.QMessageBox.information(self.main_window, 'Guardar', 'Evento guardado correctamente.')
+        QtWidgets.QMessageBox.information(
+            self.main_window,
+            'Guardar',
+            'Evento guardado correctamente.'
+        )
     
     def volver_ventana_anterior(self):
-        # Mostrar ventana anterior (Home)
+        # Vuelvo a mostrar la ventana principal
         self.parent_controller.main_window.show()
-        # Ocultar ventana actual
+        # Oculto la ventana de nuevo evento
         self.main_window.hide()

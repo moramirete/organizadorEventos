@@ -3,7 +3,7 @@ import os
 from PyQt5.QtWidgets import QMainWindow
 from PyQt5 import QtWidgets, QtCore
 
-# Configurar la ruta para importar las interfaces
+# Configuro la ruta para poder importar las interfaces .py
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.abspath(os.path.join(current_dir, '..', '..'))
 interfaces_path = os.path.join(project_root, 'interfazes', 'python')
@@ -14,6 +14,7 @@ from interfazHomeModificarListadoEventosEvento import Ui_EventoEditar
 from interfazHomeParticipantesMesas import Ui_ParticipantsManager
 from controladorParticipantes import ControladorParticipantes
 
+# Añado src para poder importar los modelos
 src_path = os.path.join(project_root, 'src')
 if src_path not in sys.path:
     sys.path.append(src_path)
@@ -24,31 +25,34 @@ from modelos.evento import Evento
 class controladorEditarEvento:
     
     def __init__(self, main_window, ui, parent_controller):
+        # Guardo la ventana, la interfaz y el controlador padre
         self.main_window = main_window 
         self.ui = ui
         self.parent_controller = parent_controller
+
         self.siguiente_window = None
-        self.evento = None   # se asignará desde fuera
+        self.evento = None   # Aquí se asigna el evento que queremos editar
         self.cambios_guardados = False
 
+        # Conecto los botones de la pantalla
         self.conectar_botones()
         
     def conectar_botones(self):
-        # Conectar botón Siguiente
+        # Botón para ir a la pantalla de participantes/mesas
         self.ui.btnSiguiente.clicked.connect(self.ir_siguiente_interfaz)
-        
-        # Conectar botón Cancelar
+        # Botón para volver atrás
         self.ui.btnCancelar.clicked.connect(self.volver_ventana_anterior)
-
-        # Botón guardar
+        # Botón para guardar cambios del evento
         try:
             self.ui.btnGuardarCambios.clicked.connect(self.guardar_cambios)
         except Exception:
+            # Por si en el .ui todavía no está el botón creado
             pass
 
     def cargar_datos_evento(self):
-        """Rellena los campos de la UI con los datos del evento actual."""
+        """Carga en los campos de la interfaz los datos del evento actual."""
         if self.evento is None:
+            # Si no viene ningún evento, creo uno vacío
             self.evento = Evento()
             return
 
@@ -60,31 +64,36 @@ class controladorEditarEvento:
         self.ui.leTelefono.setText(self.evento.telefono)
 
     def ir_siguiente_interfaz(self):
-        # Sólo permitir si guardado
+        # Solo dejo pasar si antes se han guardado los cambios
         if not self.cambios_guardados:
-            QtWidgets.QMessageBox.warning(self.main_window, 'Guardar Cambios', 'Debes guardar los cambios antes de continuar.')
+            QtWidgets.QMessageBox.warning(
+                self.main_window,
+                'Guardar Cambios',
+                'Debes guardar los cambios antes de continuar.'
+            )
             return
 
-        # Crear ventana de participantes
+        # Creo la ventana para gestionar participantes y mesas
         self.siguiente_window = QMainWindow() 
         siguiente_ui = Ui_ParticipantsManager() 
         siguiente_ui.setupUi(self.siguiente_window)
         
-        # Crear controlador de participantes
+        # Creo el controlador de participantes y le paso este como padre
         self.participantes_controller = ControladorParticipantes(
             self.siguiente_window, 
             siguiente_ui, 
             self  
         )
 
-        # Pasar evento
+        # Le paso el evento que estamos editando
         self.participantes_controller.evento = self.evento
 
-        # Mostrar ventana de participantes y ocultar la actual
+        # Muestro la ventana de participantes y oculto la actual
         self.siguiente_window.show()
         self.main_window.hide()
 
     def guardar_cambios(self):
+        # Cojo los valores de los campos de la interfaz
         nombre = self.ui.leNombre.text().strip()
         num_mesas = int(self.ui.sbMesas.value())
         inv_por_mesa = int(self.ui.sbInvPorMesa.value())
@@ -93,17 +102,24 @@ class controladorEditarEvento:
         telefono = self.ui.leTelefono.text().strip()
 
         if not nombre:
-            QtWidgets.QMessageBox.warning(self.main_window, 'Validación', 'Debes rellenar todos los campos.')
+            QtWidgets.QMessageBox.warning(
+                self.main_window,
+                'Validación',
+                'Debes rellenar todos los campos.'
+            )
             return
 
-        # 👉 ACTUALIZAR EL MISMO OBJETO, NO CREAR UNO NUEVO
+        # Actualizo el mismo objeto evento para no perder la referencia
         if self.evento is None:
             self.evento = Evento(nombre, num_mesas, inv_por_mesa, fecha, cliente, telefono)
         else:
-            # Verificar si cambió el número de mesas o capacidad
-            cambio_mesas = (self.evento.num_mesas != num_mesas or 
-                           self.evento.inv_por_mesa != inv_por_mesa)
+            # Compruebo si han cambiado el número de mesas o la capacidad por mesa
+            cambio_mesas = (
+                self.evento.num_mesas != num_mesas or 
+                self.evento.inv_por_mesa != inv_por_mesa
+            )
             
+            # Actualizo los datos básicos del evento
             self.evento.nombre = nombre
             self.evento.num_mesas = num_mesas
             self.evento.inv_por_mesa = inv_por_mesa
@@ -111,18 +127,17 @@ class controladorEditarEvento:
             self.evento.cliente = cliente
             self.evento.telefono = telefono
             
-            # Si cambió la configuración de mesas, ajustar las asignaciones
+            # Si cambia la configuración de mesas, reajusto las asignaciones
             if cambio_mesas:
                 asignaciones_antiguas = getattr(self.evento, 'asignaciones_mesas', [])
                 
-                # Crear nueva estructura de mesas
                 nuevas_asignaciones = []
                 for i in range(num_mesas):
-                    # Intentar preservar invitados de mesas antiguas si existen
+                    # Intento mantener a los invitados que ya estaban sentados
                     if i < len(asignaciones_antiguas):
-                        # Mantener invitados de la mesa existente (pero limitados a nueva capacidad)
                         invitados_antiguos = asignaciones_antiguas[i].get('invitados', [])
-                        invitados = invitados_antiguos[:inv_por_mesa]  # Limitar a nueva capacidad
+                        # Me quedo solo con los que caben en la nueva capacidad
+                        invitados = invitados_antiguos[:inv_por_mesa]
                     else:
                         invitados = []
                     
@@ -135,13 +150,17 @@ class controladorEditarEvento:
                 self.evento.asignaciones_mesas = nuevas_asignaciones
 
         self.cambios_guardados = True
-        QtWidgets.QMessageBox.information(self.main_window, 'Guardar', 'Evento guardado correctamente.')
+        QtWidgets.QMessageBox.information(
+            self.main_window,
+            'Guardar',
+            'Evento guardado correctamente.'
+        )
     
     def volver_ventana_anterior(self):
-        # Recargar eventos en la ventana padre antes de mostrarla
+        # Antes de volver, recargo los eventos en el controlador padre si tiene el método
         if hasattr(self.parent_controller, 'cargar_eventos'):
             self.parent_controller.cargar_eventos()
         
-        # Mostramos la ventana anterior a través del controlador padre
+        # Muestro la ventana anterior (listado de eventos) y oculto esta
         self.parent_controller.main_window.show()
         self.main_window.hide()

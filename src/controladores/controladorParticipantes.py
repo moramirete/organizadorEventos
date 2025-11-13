@@ -4,13 +4,14 @@ import csv
 from PyQt5.QtWidgets import QMainWindow
 from PyQt5 import QtWidgets
 
-# Configurar la ruta para importar las interfaces
+# Añado la ruta para poder importar las interfaces generadas
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.abspath(os.path.join(current_dir, '..', '..'))
 interfaces_path = os.path.join(project_root, 'interfazes', 'python')
 if interfaces_path not in sys.path:
     sys.path.append(interfaces_path)
-# Asegurar que podemos importar los modelos
+
+# Añado src al path para poder usar los modelos
 src_path = os.path.join(project_root, 'src')
 if src_path not in sys.path:
     sys.path.append(src_path)
@@ -19,64 +20,73 @@ from interfazHomeParticipantesMesas import Ui_ParticipantsManager
 from controladorMesas import ControladorMesas
 from interfazHomeModificarListadoEventosAsignacionInvitados import Ui_AsignacionesInvitados
 from modelos.participantes import Participante
-from PyQt5 import QtWidgets
+
 
 class ControladorParticipantes:
     
     def __init__(self, main_window, ui, parent_controller):
-        self.main_window = main_window 
+        # Ventana y UI de esta pantalla
+        self.main_window = main_window
         self.ui = ui
+        # Controlador anterior (Nuevo/Editar evento)
         self.parent_controller = parent_controller
+
         self.mesas_window = None
-        # evento será pasado desde Nuevo/Editar evento
+        # El evento se pasa desde el controlador padre
         self.evento = getattr(self, 'evento', None)
 
         self.conectar_botones()
-        # Cargar participantes si el evento ya tiene algunos
+        # Si el evento ya tiene participantes los cargamos en la tabla
         self.refrescar_tabla()
         
     def conectar_botones(self):
-        # Botones de la UI de participantes
+        # Botón para crear un participante nuevo
         try:
             self.ui.btnCrear.clicked.connect(self.crear_participante)
         except Exception:
             pass
 
+        # Botón para eliminar el participante seleccionado
         try:
             self.ui.btnEliminar.clicked.connect(self.eliminar_participante)
         except Exception:
             pass
 
+        # Botón "Guardar" (realmente solo muestra mensaje, los datos ya se van guardando)
         try:
             self.ui.btnGuardarCambios.clicked.connect(self.guardar_cambios)
         except Exception:
             pass
 
+        # Botón para importar participantes desde CSV
         try:
             self.ui.btnImportarCSV.clicked.connect(self.importar_csv)
         except Exception:
             pass
 
+        # Botón para ir a la pantalla de mesas
         try:
             self.ui.btnSiguiente.clicked.connect(self.ir_siguiente_interfaz)
         except Exception:
             pass
 
+        # Botón para volver a la pantalla anterior
         try:
             self.ui.btnCancelar.clicked.connect(self.volver_ventana_anterior)
         except Exception:
             pass
 
     def ir_siguiente_interfaz(self):
-        # Antes de abrir Mesas, pasar el evento actual
+        # Antes de abrir Mesas, preparo la ventana y le paso el evento actual
         self.mesas_window = QMainWindow()
         mesas_ui = Ui_AsignacionesInvitados()
         mesas_ui.setupUi(self.mesas_window)
 
         self.mesas_controller = ControladorMesas(self.mesas_window, mesas_ui, self)
-        # pasar evento
+        # Paso el evento al controlador de mesas
         self.mesas_controller.evento = getattr(self, 'evento', None)
-        # iniciar controlador de mesas para crear estructura
+
+        # Creo la estructura de mesas a partir del evento
         try:
             self.mesas_controller.iniciar()
         except Exception:
@@ -86,18 +96,17 @@ class ControladorParticipantes:
         self.main_window.hide()
     
     def volver_ventana_anterior(self):
-        # Recargar tabla en el controlador padre si tiene el método
+        # Si el padre tiene método para recargar datos, lo uso
         if hasattr(self.parent_controller, 'cargar_datos_evento'):
             self.parent_controller.cargar_datos_evento()
         
-        # Mostrar ventana anterior
+        # Muestro la ventana anterior
         self.parent_controller.main_window.show()
-        
-        # Ocultar ventana actual
+        # Oculto esta ventana
         self.main_window.hide()
 
     def crear_participante(self):
-        # Crear participante simple desde los campos
+        # Cojo los datos escritos en los campos
         nombre = self.ui.leNombreParticipante.text().strip()
         prefiere = self.ui.lePrefiereCon.text().strip()
         no_prefiere = self.ui.leNoPrefiereCon.text().strip()
@@ -106,16 +115,15 @@ class ControladorParticipantes:
             QtWidgets.QMessageBox.warning(self.main_window, 'Validación', 'El nombre es obligatorio')
             return
 
-        # Verificar que el nombre no esté duplicado
         evento = getattr(self, 'evento', None)
         if evento is not None:
-            # Verificar duplicados
+            # Compruebo que no haya otro participante con el mismo nombre
             for p_existente in evento.participantes:
                 if p_existente.nombre.lower() == nombre.lower():
                     QtWidgets.QMessageBox.warning(self.main_window, 'Duplicado', 'Ya existe un participante con ese nombre')
                     return
             
-            # Comprobar límite de capacidad total
+            # Compruebo si el evento ya está lleno
             capacidad_actual = evento.contar_participantes()
             capacidad_maxima = evento.capacidad_total()
             if capacidad_actual >= capacidad_maxima:
@@ -130,12 +138,13 @@ class ControladorParticipantes:
                 )
                 return
 
+        # Creo el objeto participante
         p = Participante(nombre, prefiere, no_prefiere)
-        # si hay evento, añadirlo allí
+        # Si hay evento lo añado ahí
         if evento is not None:
             evento.agregar_participante(p)
         else:
-            # guardar temporal en el controlador padre si existe
+            # Si no, intento añadirlo al evento que tenga el padre
             lst = getattr(self.parent_controller, 'evento', None)
             if lst is not None:
                 lst.agregar_participante(p)
@@ -143,6 +152,7 @@ class ControladorParticipantes:
         self.refrescar_tabla()
 
     def eliminar_participante(self):
+        # Elimino el participante de la fila seleccionada
         tabla = self.ui.tablaParticipantes
         fila = tabla.currentRow()
         if fila < 0:
@@ -156,6 +166,7 @@ class ControladorParticipantes:
         self.refrescar_tabla()
 
     def refrescar_tabla(self):
+        # Vuelvo a dibujar la tabla con la lista de participantes del evento
         tabla = self.ui.tablaParticipantes
         tabla.clearContents()
         evento = getattr(self, 'evento', None) or getattr(self.parent_controller, 'evento', None)
@@ -167,11 +178,11 @@ class ControladorParticipantes:
             tabla.setItem(i, 2, QtWidgets.QTableWidgetItem(p.no_prefiere))
 
     def guardar_cambios(self):
-        # Para simplicidad, guardar ya está hecho al añadir; aquí solo confirmamos
+        # Los cambios ya se aplican al añadir/eliminar. Aquí solo confirmo.
         QtWidgets.QMessageBox.information(self.main_window, 'Guardar', 'Participantes guardados')
 
     def importar_csv(self):
-        # Diálogo para seleccionar archivo CSV
+        # Abro un diálogo para elegir el archivo CSV
         options = QtWidgets.QFileDialog.Options()
         filename, _ = QtWidgets.QFileDialog.getOpenFileName(
             self.main_window,
@@ -198,7 +209,7 @@ class ControladorParticipantes:
             with open(filename, 'r', encoding='utf-8-sig', newline='') as f:
                 sample = f.read(2048)
                 f.seek(0)
-                # Detectar delimitador y cabecera si es posible
+                # Intento detectar delimitador y si tiene cabecera
                 try:
                     dialect = csv.Sniffer().sniff(sample, delimiters=',;\t')
                 except Exception:
@@ -210,7 +221,7 @@ class ControladorParticipantes:
 
                 reader = csv.reader(f, dialect)
                 if has_header:
-                    next(reader, None)  # Saltar cabecera
+                    next(reader, None)  # salta la cabecera
 
                 existentes = {p.nombre.strip().lower() for p in evento.participantes}
 
@@ -230,7 +241,7 @@ class ControladorParticipantes:
                             duplicados += 1
                             continue
 
-                        # Capacidad total
+                        # Compruebo capacidad antes de añadir
                         if evento.contar_participantes() >= evento.capacidad_total():
                             sin_espacio += 1
                             continue
