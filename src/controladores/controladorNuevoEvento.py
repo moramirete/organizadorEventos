@@ -90,14 +90,14 @@ class controladorNuevoEvento:
         self.evento = Evento(nombre, num_mesas, inv_por_mesa, fecha, cliente, telefono)
         self.cambios_guardados = True
 
+        # 👉 GUARDAR EN LA LISTA GLOBAL DEL HOME
+        if self.evento not in self.parent_controller.eventos:
+            self.parent_controller.eventos.append(self.evento)
+
         QtWidgets.QMessageBox.information(self.main_window, 'Guardar', 'Evento guardado correctamente.')
     
     def volver_ventana_anterior(self):
         # Mostrar ventana anterior (Home)
         self.parent_controller.main_window.show()
-        
         # Ocultar ventana actual
-        self.main_window.hide()
-        self.parent_controller.main_window.show()
-        
         self.main_window.hide()

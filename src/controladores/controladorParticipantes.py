@@ -1,5 +1,6 @@
 import sys
 import os
+import csv
 from PyQt5.QtWidgets import QMainWindow
 from PyQt5 import QtWidgets
 
@@ -31,6 +32,8 @@ class ControladorParticipantes:
         self.evento = getattr(self, 'evento', None)
 
         self.conectar_botones()
+        # Cargar participantes si el evento ya tiene algunos
+        self.refrescar_tabla()
         
     def conectar_botones(self):
         # Botones de la UI de participantes
@@ -46,6 +49,11 @@ class ControladorParticipantes:
 
         try:
             self.ui.btnGuardarCambios.clicked.connect(self.guardar_cambios)
+        except Exception:
+            pass
+
+        try:
+            self.ui.btnImportarCSV.clicked.connect(self.importar_csv)
         except Exception:
             pass
 
@@ -78,6 +86,10 @@ class ControladorParticipantes:
         self.main_window.hide()
     
     def volver_ventana_anterior(self):
+        # Recargar tabla en el controlador padre si tiene el método
+        if hasattr(self.parent_controller, 'cargar_datos_evento'):
+            self.parent_controller.cargar_datos_evento()
+        
         # Mostrar ventana anterior
         self.parent_controller.main_window.show()
         
@@ -94,11 +106,28 @@ class ControladorParticipantes:
             QtWidgets.QMessageBox.warning(self.main_window, 'Validación', 'El nombre es obligatorio')
             return
 
-        # comprobar límite de capacidad si existe evento
+        # Verificar que el nombre no esté duplicado
         evento = getattr(self, 'evento', None)
         if evento is not None:
-            if evento.contar_participantes() >= evento.capacidad_total():
-                QtWidgets.QMessageBox.warning(self.main_window, 'Límite', 'No caben más invitados según las mesas configuradas')
+            # Verificar duplicados
+            for p_existente in evento.participantes:
+                if p_existente.nombre.lower() == nombre.lower():
+                    QtWidgets.QMessageBox.warning(self.main_window, 'Duplicado', 'Ya existe un participante con ese nombre')
+                    return
+            
+            # Comprobar límite de capacidad total
+            capacidad_actual = evento.contar_participantes()
+            capacidad_maxima = evento.capacidad_total()
+            if capacidad_actual >= capacidad_maxima:
+                QtWidgets.QMessageBox.warning(
+                    self.main_window, 
+                    'Límite alcanzado', 
+                    f'No caben más invitados.\n\n'
+                    f'Participantes actuales: {capacidad_actual}\n'
+                    f'Capacidad máxima: {capacidad_maxima}\n'
+                    f'(Mesas: {evento.num_mesas} × Capacidad: {evento.inv_por_mesa})\n\n'
+                    f'Para agregar más participantes, vuelve atrás y aumenta el número de mesas o la capacidad por mesa.'
+                )
                 return
 
         p = Participante(nombre, prefiere, no_prefiere)
@@ -140,3 +169,89 @@ class ControladorParticipantes:
     def guardar_cambios(self):
         # Para simplicidad, guardar ya está hecho al añadir; aquí solo confirmamos
         QtWidgets.QMessageBox.information(self.main_window, 'Guardar', 'Participantes guardados')
+
+    def importar_csv(self):
+        # Diálogo para seleccionar archivo CSV
+        options = QtWidgets.QFileDialog.Options()
+        filename, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self.main_window,
+            'Importar CSV de participantes',
+            '',
+            'CSV Files (*.csv);;All Files (*)',
+            options=options
+        )
+        if not filename:
+            return
+
+        evento = getattr(self, 'evento', None) or getattr(self.parent_controller, 'evento', None)
+        if evento is None:
+            QtWidgets.QMessageBox.warning(self.main_window, 'Importar CSV', 'No hay evento activo para importar participantes.')
+            return
+
+        agregados = 0
+        duplicados = 0
+        sin_nombre = 0
+        sin_espacio = 0
+        errores = 0
+
+        try:
+            with open(filename, 'r', encoding='utf-8-sig', newline='') as f:
+                sample = f.read(2048)
+                f.seek(0)
+                # Detectar delimitador y cabecera si es posible
+                try:
+                    dialect = csv.Sniffer().sniff(sample, delimiters=',;\t')
+                except Exception:
+                    dialect = csv.excel
+                try:
+                    has_header = csv.Sniffer().has_header(sample)
+                except Exception:
+                    has_header = False
+
+                reader = csv.reader(f, dialect)
+                if has_header:
+                    next(reader, None)  # Saltar cabecera
+
+                existentes = {p.nombre.strip().lower() for p in evento.participantes}
+
+                for row in reader:
+                    try:
+                        if not row:
+                            continue
+                        nombre = (row[0] if len(row) > 0 else '').strip()
+                        prefiere = (row[1] if len(row) > 1 else '').strip()
+                        no_prefiere = (row[2] if len(row) > 2 else '').strip()
+
+                        if not nombre:
+                            sin_nombre += 1
+                            continue
+
+                        if nombre.lower() in existentes:
+                            duplicados += 1
+                            continue
+
+                        # Capacidad total
+                        if evento.contar_participantes() >= evento.capacidad_total():
+                            sin_espacio += 1
+                            continue
+
+                        p = Participante(nombre, prefiere, no_prefiere)
+                        evento.agregar_participante(p)
+                        existentes.add(nombre.lower())
+                        agregados += 1
+                    except Exception:
+                        errores += 1
+
+            self.refrescar_tabla()
+            QtWidgets.QMessageBox.information(
+                self.main_window,
+                'Importar CSV',
+                'Importación finalizada.\n\n'
+                f'Agregados: {agregados}\n'
+                f'Duplicados omitidos: {duplicados}\n'
+                f'Filas sin nombre: {sin_nombre}\n'
+                f'Sin espacio (capacidad completa): {sin_espacio}\n'
+                f'Errores de lectura: {errores}'
+            )
+        except Exception as e:
+            QtWidgets.QMessageBox.critical(self.main_window, 'Importar CSV', f'Error al importar CSV:\n{e}')

@@ -69,6 +69,11 @@ class ControladorMesas:
         except Exception:
             pass
 
+        try:
+            self.ui.btnExportar.clicked.connect(self.exportar_csv)
+        except Exception:
+            pass
+
     def volver_a_home(self):
        #Para voler al menu principal home 
         home_controller = self.parent_controller.parent_controller.parent_controller
@@ -85,24 +90,53 @@ class ControladorMesas:
             QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No
         )
         
-        # Si presiona Sí, mostrar mensaje de éxito
+        # Si presiona Sí, guardar las asignaciones en el evento
         if respuesta == QtWidgets.QMessageBox.Yes:
-            QtWidgets.QMessageBox.information(
-                self.main_window,
-                'Éxito',
-                'Asignación guardada correctamente.'
-            )
+            if self.evento is not None:
+                # Guardar la estructura de mesas en el evento (copia profunda)
+                self.evento.asignaciones_mesas = []
+                for mesa in self.mesas:
+                    self.evento.asignaciones_mesas.append({
+                        'id': mesa.get('id', 0),
+                        'capacidad': mesa.get('capacidad', 0),
+                        'invitados': mesa.get('invitados', []).copy()
+                    })
+                QtWidgets.QMessageBox.information(
+                    self.main_window,
+                    'Éxito',
+                    'Asignación guardada correctamente.'
+                )
+            else:
+                QtWidgets.QMessageBox.warning(
+                    self.main_window,
+                    'Error',
+                    'No hay evento para guardar.'
+                )
 
     def iniciar(self):
         # Llamar después de asignar self.evento
         if self.evento is None:
             return
-        # crear estructura de mesas
-        self.mesas = []
-        for i in range(max(0, int(self.evento.num_mesas))):
-            self.mesas.append({'id': i+1, 'capacidad': int(self.evento.inv_por_mesa), 'invitados': []})
-
-        self.reiniciar_asignaciones()
+        
+        # Verificar si el evento ya tiene asignaciones guardadas
+        asignaciones_guardadas = getattr(self.evento, 'asignaciones_mesas', [])
+        
+        if asignaciones_guardadas and len(asignaciones_guardadas) > 0:
+            # Cargar las asignaciones guardadas
+            self.mesas = []
+            for mesa in asignaciones_guardadas:
+                self.mesas.append({
+                    'id': mesa.get('id', 0),
+                    'capacidad': mesa.get('capacidad', int(self.evento.inv_por_mesa)),
+                    'invitados': mesa.get('invitados', []).copy()
+                })
+        else:
+            # Crear estructura de mesas vacías
+            self.mesas = []
+            for i in range(max(0, int(self.evento.num_mesas))):
+                self.mesas.append({'id': i+1, 'capacidad': int(self.evento.inv_por_mesa), 'invitados': []})
+        
+        self.refresh_ui()
 
     def reiniciar_asignaciones(self):
         # vaciar asignaciones y llenar lista de invitados
@@ -224,3 +258,45 @@ class ControladorMesas:
         # añadir a lista de invitados
         self.ui.listaInvitados.addItem(nombre)
         self.refresh_ui()
+
+    def exportar_csv(self):
+        # Exporta el contenido visible de la tabla de asignaciones a CSV
+        tabla = getattr(self.ui, 'tablaAsignaciones', None)
+        if tabla is None:
+            QtWidgets.QMessageBox.warning(self.main_window, 'Exportar CSV', 'No se encontró la tabla de asignaciones.')
+            return
+
+        options = QtWidgets.QFileDialog.Options()
+        filename, _ = QtWidgets.QFileDialog.getSaveFileName(
+            self.main_window,
+            'Guardar CSV',
+            '',
+            'CSV Files (*.csv);;All Files (*)',
+            options=options
+        )
+        if not filename:
+            return
+
+        import csv
+        try:
+            with open(filename, 'w', newline='', encoding='utf-8-sig') as f:
+                writer = csv.writer(f)
+
+                # Cabeceras desde la tabla (Mesa, Invitados)
+                cabecera = []
+                for col in range(tabla.columnCount()):
+                    item = tabla.horizontalHeaderItem(col)
+                    cabecera.append(item.text() if item is not None else '')
+                writer.writerow(cabecera)
+
+                # Filas visibles
+                for row in range(tabla.rowCount()):
+                    datos = []
+                    for col in range(tabla.columnCount()):
+                        item = tabla.item(row, col)
+                        datos.append(item.text() if item is not None else '')
+                    writer.writerow(datos)
+
+            QtWidgets.QMessageBox.information(self.main_window, 'Exportar CSV', f'CSV exportado correctamente a:\n{filename}')
+        except Exception as e:
+            QtWidgets.QMessageBox.critical(self.main_window, 'Exportar CSV', f'Error al exportar CSV:\n{e}')

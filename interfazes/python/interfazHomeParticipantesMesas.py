@@ -134,6 +134,10 @@ class Ui_ParticipantsManager(object):
         self.bottomButtons.addWidget(self.btnGuardarCambios)
         spacerItem1 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.bottomButtons.addItem(spacerItem1)
+        self.btnImportarCSV = QtWidgets.QPushButton(self.centralwidget)
+        self.btnImportarCSV.setStyleSheet("QPushButton{background:#e6eefb; color:#1E73E8; font-size:11pt; border:1px solid #b9cff6; border-radius:12px; padding:10px 18px;} QPushButton:hover{background:#d9e7fb;} QPushButton:pressed{background:#c9dcf7;}")
+        self.btnImportarCSV.setObjectName("btnImportarCSV")
+        self.bottomButtons.addWidget(self.btnImportarCSV)
         self.btnSiguiente = QtWidgets.QPushButton(self.centralwidget)
         self.btnSiguiente.setStyleSheet("QPushButton{background:#cfe0fb; color:#1E73E8; font-size:11pt; border:1px solid #b9cff6; border-radius:12px; padding:10px 18px;} QPushButton:hover{background:#bfd6fb;} QPushButton:pressed{background:#b2cdf7;}")
         self.btnSiguiente.setObjectName("btnSiguiente")
@@ -172,6 +176,7 @@ class Ui_ParticipantsManager(object):
         self.btnCrear.setText(_translate("ParticipantsManager", "Crear"))
         self.btnEliminar.setText(_translate("ParticipantsManager", "Eliminar"))
         self.btnGuardarCambios.setText(_translate("ParticipantsManager", "Guardar Cambios"))
+        self.btnImportarCSV.setText(_translate("ParticipantsManager", "Importar CSV"))
         self.btnSiguiente.setText(_translate("ParticipantsManager", "Siguiente"))
         self.btnCancelar.setText(_translate("ParticipantsManager", "Cancelar"))
 

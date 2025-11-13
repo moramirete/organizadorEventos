@@ -89,7 +89,7 @@ class Ui_EventoMesas(object):
         _translate = QtCore.QCoreApplication.translate
         EventoMesas.setWindowTitle(_translate("EventoMesas", "Gestor de Eventos - Los Super Nenes"))
         self.titulo.setText(_translate("EventoMesas", "Gestor de Eventos - Los Super Nenes"))
-        self.lblTituloEvento.setText(_translate("EventoMesas", "Comunión Sergio"))
+        self.lblTituloEvento.setText(_translate("EventoMesas", ""))
         item = self.tablaMesas.horizontalHeaderItem(0)
         item.setText(_translate("EventoMesas", "Mesa"))
         item = self.tablaMesas.horizontalHeaderItem(1)
