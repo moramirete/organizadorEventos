@@ -31,6 +31,8 @@ class ControladorParticipantes:
         self.evento = getattr(self, 'evento', None)
 
         self.conectar_botones()
+        # Cargar participantes si el evento ya tiene algunos
+        self.refrescar_tabla()
         
     def conectar_botones(self):
         # Botones de la UI de participantes
@@ -78,6 +80,10 @@ class ControladorParticipantes:
         self.main_window.hide()
     
     def volver_ventana_anterior(self):
+        # Recargar tabla en el controlador padre si tiene el método
+        if hasattr(self.parent_controller, 'cargar_datos_evento'):
+            self.parent_controller.cargar_datos_evento()
+        
         # Mostrar ventana anterior
         self.parent_controller.main_window.show()
         
@@ -94,11 +100,28 @@ class ControladorParticipantes:
             QtWidgets.QMessageBox.warning(self.main_window, 'Validación', 'El nombre es obligatorio')
             return
 
-        # comprobar límite de capacidad si existe evento
+        # Verificar que el nombre no esté duplicado
         evento = getattr(self, 'evento', None)
         if evento is not None:
-            if evento.contar_participantes() >= evento.capacidad_total():
-                QtWidgets.QMessageBox.warning(self.main_window, 'Límite', 'No caben más invitados según las mesas configuradas')
+            # Verificar duplicados
+            for p_existente in evento.participantes:
+                if p_existente.nombre.lower() == nombre.lower():
+                    QtWidgets.QMessageBox.warning(self.main_window, 'Duplicado', 'Ya existe un participante con ese nombre')
+                    return
+            
+            # Comprobar límite de capacidad total
+            capacidad_actual = evento.contar_participantes()
+            capacidad_maxima = evento.capacidad_total()
+            if capacidad_actual >= capacidad_maxima:
+                QtWidgets.QMessageBox.warning(
+                    self.main_window, 
+                    'Límite alcanzado', 
+                    f'No caben más invitados.\n\n'
+                    f'Participantes actuales: {capacidad_actual}\n'
+                    f'Capacidad máxima: {capacidad_maxima}\n'
+                    f'(Mesas: {evento.num_mesas} × Capacidad: {evento.inv_por_mesa})\n\n'
+                    f'Para agregar más participantes, vuelve atrás y aumenta el número de mesas o la capacidad por mesa.'
+                )
                 return
 
         p = Participante(nombre, prefiere, no_prefiere)
