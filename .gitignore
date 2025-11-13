@@ -1,1 +1,5 @@
 /venv
+/src/controladores/__pycache__
+/src/algoritmos/__pycache__
+/src/modelos/__pycache__
+/interfazes/python/__pycache__
