@@ -23,9 +23,6 @@ class ControladorHome:
         self.main_window = main_window 
         self.ui = ui
         
-        # 👉 LISTA GLOBAL DE EVENTOS (MEMORIA DE LA APP)
-        self.eventos = []
-
         self.consultar_window = None
         self.nuevo_window = None
         self.modificar_window = None
@@ -43,6 +40,7 @@ class ControladorHome:
         consultar_ui = Ui_EventosListado() 
         consultar_ui.setupUi(self.consultar_window)
         
+        # Se pasa 'self' (instancia de ControladorHome) como controlador padre
         self.consultar_controller = ControladorConsultar1(
             self.consultar_window, 
             consultar_ui, 
@@ -50,7 +48,7 @@ class ControladorHome:
         )
         
         self.consultar_window.show()
-        # self.main_window.hide()
+        # self.main_window.hide() <--- Removido/Comentado
         
 
     def abrir_nuevo_evento(self):
@@ -58,6 +56,8 @@ class ControladorHome:
         nuevo_ui = Ui_EventoEditar() 
         nuevo_ui.setupUi(self.nuevo_window)
 
+        # Uso nuevo_ui y nuevo_window para el nuevo controller,
+        # y se almacena separado así no se sobreescribe consultar_controller.
         self.nuevo_controller = controladorNuevoEvento(
             self.nuevo_window, 
             nuevo_ui, 
@@ -65,13 +65,15 @@ class ControladorHome:
         )
         
         self.nuevo_window.show()
-        # self.main_window.hide()
+        # self.main_window.hide() <--- Removido/Comentado
     
     def abrir_modificar_eventos(self):
         self.modificar_window = QMainWindow() 
         modificar_ui = Ui_EventosGestion() 
         modificar_ui.setupUi(self.modificar_window)
 
+        # Uso modificar_ui y modificar_window para el modificar controller,
+        # y se almacena separado así no se sobreescribe consultar_controller.
         self.modificar_controller = controladorModificarEventos(
             self.modificar_window, 
             modificar_ui, 
@@ -79,7 +81,7 @@ class ControladorHome:
         )
         
         self.modificar_window.show()
-        # self.main_window.hide()
+        # self.main_window.hide() <--- Removido/Comentado
 
 # --- Bloque de ejecución principal para la aplicación (Main) ---
 

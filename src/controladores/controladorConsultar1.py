@@ -34,9 +34,6 @@ class ControladorConsultar1:
         self.modificar_window = None
 
         self.conectar_botones()
-
-        # 👉 CARGAR LOS EVENTOS EN LA TABLA
-        self.cargar_eventos()
         
     def conectar_botones(self):
         self.ui.btnVerEvento.clicked.connect(self.abrir_consultar_eventos)
@@ -46,86 +43,9 @@ class ControladorConsultar1:
         except Exception:
             pass
         self.ui.btnVolver.clicked.connect(self.volver_ventana_principal)
-        
-        # Conectar búsqueda en tiempo real
-        try:
-            self.ui.leBuscar.textChanged.connect(self.buscar_eventos)
-        except Exception:
-            pass
-
-    def cargar_eventos(self):
-        """Rellena tablaEventos con los eventos del Home."""
-        tabla = getattr(self.ui, 'tablaEventos', None)
-        if tabla is None:
-            return
-
-        eventos = getattr(self.parent_controller, 'eventos', [])
-        tabla.setRowCount(len(eventos))
-
-        for fila, ev in enumerate(eventos):
-            # Preparamos los valores en el orden que quieras
-            valores = [
-                getattr(ev, 'nombre', ''),
-                getattr(ev, 'fecha', ''),
-                getattr(ev, 'cliente', ''),
-                getattr(ev, 'telefono', ''),
-                str(getattr(ev, 'num_mesas', '')),
-                str(getattr(ev, 'inv_por_mesa', '')),
-            ]
-
-            for col in range(min(tabla.columnCount(), len(valores))):
-                tabla.setItem(fila, col, QtWidgets.QTableWidgetItem(valores[col]))
-    
-    def buscar_eventos(self):
-        """Filtra los eventos en la tabla según el texto de búsqueda."""
-        texto_busqueda = self.ui.leBuscar.text().strip().lower()
-        tabla = getattr(self.ui, 'tablaEventos', None)
-        if tabla is None:
-            return
-        
-        eventos = getattr(self.parent_controller, 'eventos', [])
-        
-        if not texto_busqueda:
-            # Si no hay texto de búsqueda, mostrar todos los eventos
-            self.cargar_eventos()
-            return
-        
-        # Filtrar eventos que coincidan con el texto de búsqueda
-        eventos_filtrados = []
-        for ev in eventos:
-            # Buscar en nombre, fecha, cliente o teléfono
-            if (texto_busqueda in getattr(ev, 'nombre', '').lower() or
-                texto_busqueda in getattr(ev, 'fecha', '').lower() or
-                texto_busqueda in getattr(ev, 'cliente', '').lower() or
-                texto_busqueda in getattr(ev, 'telefono', '').lower()):
-                eventos_filtrados.append(ev)
-        
-        # Mostrar eventos filtrados
-        tabla.setRowCount(len(eventos_filtrados))
-        for fila, ev in enumerate(eventos_filtrados):
-            valores = [
-                getattr(ev, 'nombre', ''),
-                getattr(ev, 'fecha', ''),
-                getattr(ev, 'cliente', ''),
-                getattr(ev, 'telefono', ''),
-                str(getattr(ev, 'num_mesas', '')),
-                str(getattr(ev, 'inv_por_mesa', '')),
-            ]
-            for col in range(min(tabla.columnCount(), len(valores))):
-                tabla.setItem(fila, col, QtWidgets.QTableWidgetItem(valores[col]))
 
     # Método para abrir la ventana del evento con sus datos (la vista de mesas)
     def abrir_consultar_eventos(self):
-        # Validar que haya una fila seleccionada
-        tabla = getattr(self.ui, 'tablaEventos', None)
-        if tabla is None:
-            return
-        
-        fila_seleccionada = tabla.currentRow()
-        if fila_seleccionada < 0:
-            QtWidgets.QMessageBox.warning(self.main_window, 'Selección', 'Por favor selecciona un evento de la lista.')
-            return
-        
         self.consultar_window = QMainWindow() 
         consultar_ui = Ui_EventoMesas() 
         consultar_ui.setupUi(self.consultar_window)
@@ -150,11 +70,14 @@ class ControladorConsultar1:
     def exportar_csv(self):
         # Exporta el contenido de la tabla `tablaEventos` a un archivo CSV.
 
+        # Abre un diálogo para elegir la ruta de guardado y escribe las cabeceras y filas actuales de la QTableWidget.
+        
         tabla = getattr(self.ui, 'tablaEventos', None)
         if tabla is None:
             QtWidgets.QMessageBox.warning(self.main_window, 'Exportar CSV', 'No se encontró la tabla de eventos.')
             return
 
+        # Texto para seleccionar fichero
         options = QtWidgets.QFileDialog.Options()
         filename, _ = QtWidgets.QFileDialog.getSaveFileName(self.main_window,'Guardar CSV','','CSV Files (*.csv);;All Files (*)',options=options)
         if not filename:
@@ -164,12 +87,14 @@ class ControladorConsultar1:
             with open(filename, 'w', newline='', encoding='utf-8-sig') as f:
                 writer = csv.writer(f)
 
+                # Aqui lo que hace es recorrer cad columna para obtener el encabezado principal de cada evento
                 cabecera = []
                 for columnas in range(tabla.columnCount()):
                     item = tabla.horizontalHeaderItem(columnas)
                     cabecera.append(item.text() if item is not None else '')
                 writer.writerow(cabecera)
 
+                # Aqui lo mismo para las filas. Al final escribe el texto de cada linea en el CSV
                 for filas in range(tabla.rowCount()):
                     datos_fila = []
                     for columnas in range(tabla.columnCount()):

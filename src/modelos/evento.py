@@ -7,7 +7,6 @@ class Evento:
         self.cliente = cliente
         self.telefono = telefono
         self.participantes = []  # lista de Participante
-        self.asignaciones_mesas = []  # lista de dicts: [{'id':1,'capacidad':x,'invitados':[nombres]}]
 
     def agregar_participante(self, participante):
         self.participantes.append(participante)
