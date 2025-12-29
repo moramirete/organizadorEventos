@@ -1,5 +1,8 @@
-/venv
-/src/controladores/__pycache__
-/src/algoritmos/__pycache__
-/src/modelos/__pycache__
-/interfazes/python/__pycache__
+# Directorios de entornos virtuales
+venv/
+.venv/
+
+# Archivos de configuración o temporales
+*.pyc
+__pycache__/
+.env
