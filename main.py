@@ -19,22 +19,23 @@ if controladores_path not in sys.path:
 # --------------------------------------------------------
 
 # Importar las clases controladoras e interfaces
-from controladorHome import ControladorHome
-from interfazHome import Ui_MainWindow
+from controladorLogin import ControladorLogin
+from interfazLogin import Ui_LoginWindow
 
 
 def run_application():
     """Función principal para inicializar y ejecutar la aplicación."""
     app = QApplication(sys.argv)
     
-    MainWindow = QMainWindow()
-    ui = Ui_MainWindow()
-    ui.setupUi(MainWindow)
+    LoginWindow = QMainWindow()
+    ui = Ui_LoginWindow()
+    ui.setupUi(LoginWindow)
     
-    # Inicializa el ControladorHome, que gestionará el flujo inicial
-    controller = ControladorHome(MainWindow, ui)
+    # Inicializa el ControladorLogin, que gestionará el flujo inicial
+    controller = ControladorLogin(LoginWindow, ui)
     
-    MainWindow.show()
+    LoginWindow.show()
+    
     try:
         sys.exit(app.exec_())
     except Exception as e:
