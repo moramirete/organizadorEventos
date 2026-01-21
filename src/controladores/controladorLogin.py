@@ -38,7 +38,6 @@ class ControladorLogin:
             self.abrir_home()
         else:
             # Lógica de registro similar a activity_main.xml -> VerificacionEmailActivity
-            QMessageBox.information(self.main_window, "Registro", "Por favor, verifica tu email.")
             self.cambiar_modo()
 
     def abrir_home(self):
