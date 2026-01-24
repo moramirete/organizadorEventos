@@ -98,19 +98,90 @@ class controladorNuevoEvento:
             )
             return
 
-        # Guardo los datos en el objeto Evento
-        self.evento = Evento(nombre, num_mesas, inv_por_mesa, fecha, cliente, telefono)
-        self.cambios_guardados = True
+        # Guardo los datos en el objeto Evento (localmente)
+        if self.evento is None:
+            self.evento = Evento(nombre, num_mesas, inv_por_mesa, fecha, cliente, telefono)
+        else:
+            self.evento.nombre = nombre
+            self.evento.num_mesas = num_mesas
+            self.evento.inv_por_mesa = inv_por_mesa
+            self.evento.fecha = fecha
+            self.evento.cliente = cliente
+            self.evento.telefono = telefono
+        
+        # --- GUARDAR EN SUPABASE ---
+        try:
+            from config.supabase_client import get_supabase_client
+            supabase = get_supabase_client()
+            
+            # Obtenemos los datos del usuario actual desde el controlador padre (Home)
+            usuario_id = self.parent_controller.current_user_id
+            usuario_nombre = self.parent_controller.current_user_name
+            usuario_email = getattr(self.parent_controller, 'current_user_email', None)
+            
+            # --- SALVAGUARDA: Sincronizar perfil antes de insertar evento ---
+            # Esto asegura que el usuario_id existe en la tabla 'usuarios' (FK)
+            try:
+                supabase.table("usuarios").upsert({
+                    "id": usuario_id,
+                    "username": usuario_nombre,
+                    "email": usuario_email
+                }).execute()
+            except Exception as e:
+                print(f"Aviso: No se pudo auto-sincronizar perfil: {e}")
 
-        # Añado el evento a la lista general del Home si aún no está
-        if self.evento not in self.parent_controller.eventos:
-            self.parent_controller.eventos.append(self.evento)
+            # Preparamos los datos según la imagen de la tabla 'eventos' que me pasaste
+            # Nota: 'distribucion' guardará tanto participantes como mesas como JSON
+            # Nota: 'num_mesas' e 'inv_por_mesa' no están en la DB, van dentro de distribucion
+            datos_evento = {
+                "usuario_id": usuario_id,
+                "nombre": nombre,
+                "fecha": fecha,
+                "ubicacion": cliente,
+                "telefono": int(telefono) if telefono.isdigit() else 0,
+                "num_participantes": len(self.evento.participantes),
+                "distribucion": {
+                    "configuracion": {
+                        "num_mesas": num_mesas,
+                        "inv_por_mesa": inv_por_mesa
+                    },
+                    "lista_participantes": [
+                        {"nombre": p.nombre, "prefiere": p.prefiere, "no_prefiere": p.no_prefiere}
+                        for p in self.evento.participantes
+                    ],
+                    "asignaciones_mesas": self.evento.asignaciones_mesas
+                }
+            }
 
-        QtWidgets.QMessageBox.information(
-            self.main_window,
-            'Guardar',
-            'Evento guardado correctamente.'
-        )
+            # Si ya tenemos ID, lo incluimos para que haga UPSERT (actualizar en vez de insertar)
+            if getattr(self.evento, 'id', None):
+                datos_evento["id"] = self.evento.id
+            
+            res = supabase.table("eventos").upsert(datos_evento).execute()
+            
+            if res.data:
+                # GUARDAMOS EL ID RECUPERADO DE LA BASE DE DATOS PARA FUTURAS ACTUALIZACIONES
+                self.evento.id = res.data[0].get("id")
+                
+                self.cambios_guardados = True
+                # Añado el evento a la lista general del Home si aún no está
+                if self.evento not in self.parent_controller.eventos:
+                    self.parent_controller.eventos.append(self.evento)
+
+                QtWidgets.QMessageBox.information(
+                    self.main_window,
+                    'Guardar',
+                    'Evento guardado correctamente en la nube.'
+                )
+            else:
+                raise Exception("No se recibieron datos tras el guardado.")
+
+        except Exception as e:
+            QtWidgets.QMessageBox.critical(
+                self.main_window,
+                'Error al Guardar',
+                f'No se pudo guardar el evento en la base de datos: {str(e)}'
+            )
     
     def volver_ventana_anterior(self):
         # Vuelvo a mostrar la ventana principal

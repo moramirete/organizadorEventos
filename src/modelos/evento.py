@@ -1,5 +1,6 @@
 class Evento:
-    def __init__(self, nombre='', num_mesas=0, inv_por_mesa=0, fecha=None, cliente='', telefono=''):
+    def __init__(self, nombre='', num_mesas=0, inv_por_mesa=0, fecha=None, cliente='', telefono='', id=None):
+        self.id = id
         self.nombre = nombre
         self.num_mesas = int(num_mesas)
         self.inv_por_mesa = int(inv_por_mesa)

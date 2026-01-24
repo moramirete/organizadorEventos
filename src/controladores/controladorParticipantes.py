@@ -151,20 +151,6 @@ class ControladorParticipantes:
 
         self.refrescar_tabla()
 
-    def eliminar_participante(self):
-        # Elimino el participante de la fila seleccionada
-        tabla = self.ui.tablaParticipantes
-        fila = tabla.currentRow()
-        if fila < 0:
-            QtWidgets.QMessageBox.warning(self.main_window, 'Eliminar', 'Selecciona un participante')
-            return
-
-        evento = getattr(self, 'evento', None) or getattr(self.parent_controller, 'evento', None)
-        if evento is not None:
-            evento.eliminar_participante(fila)
-
-        self.refrescar_tabla()
-
     def refrescar_tabla(self):
         # Vuelvo a dibujar la tabla con la lista de participantes del evento
         tabla = self.ui.tablaParticipantes
@@ -178,8 +164,86 @@ class ControladorParticipantes:
             tabla.setItem(i, 2, QtWidgets.QTableWidgetItem(p.no_prefiere))
 
     def guardar_cambios(self):
-        # Los cambios ya se aplican al añadir/eliminar. Aquí solo confirmo.
-        QtWidgets.QMessageBox.information(self.main_window, 'Guardar', 'Participantes guardados')
+        # Sincronizamos con la nube para asegurar el guardado
+        self.sincronizar_nube()
+        QtWidgets.QMessageBox.information(self.main_window, 'Guardar', 'Participantes guardados en la nube')
+
+    def sincronizar_nube(self):
+        """Sincroniza el estado actual del evento (participantes y mesas) con Supabase"""
+        evento = getattr(self, 'evento', None) or getattr(self.parent_controller, 'evento', None)
+        if evento is None or not getattr(evento, 'id', None):
+            print("No se puede sincronizar: evento no guardado en DB aún")
+            return
+
+        try:
+            from config.supabase_client import get_supabase_client
+            supabase = get_supabase_client()
+            
+            # Preparamos el objeto distribucion JSONB
+            # IMPORTANTE: Incluimos la configuracion para no borrarla al sincronizar invitados
+            distribucion = {
+                "configuracion": {
+                    "num_mesas": getattr(evento, 'num_mesas', 0),
+                    "inv_por_mesa": getattr(evento, 'inv_por_mesa', 0)
+                },
+                "lista_participantes": [
+                    {"nombre": p.nombre, "prefiere": p.prefiere, "no_prefiere": p.no_prefiere}
+                    for p in evento.participantes
+                ],
+                "asignaciones_mesas": evento.asignaciones_mesas
+            }
+            
+            # Solo actualizamos la columna distribucion y num_participantes
+            supabase.table("eventos").update({
+                "distribucion": distribucion,
+                "num_participantes": len(evento.participantes)
+            }).eq("id", evento.id).execute()
+            
+            print(f"Sincronizado con éxito: {len(evento.participantes)} invitados.")
+        except Exception as e:
+            print(f"Error sincronizando con la nube: {e}")
+
+    def crear_participante(self):
+        # ... (código anterior igual)
+        nombre = self.ui.leNombreParticipante.text().strip()
+        prefiere = self.ui.lePrefiereCon.text().strip()
+        no_prefiere = self.ui.leNoPrefiereCon.text().strip()
+
+        if not nombre:
+            QtWidgets.QMessageBox.warning(self.main_window, 'Validación', 'El nombre es obligatorio')
+            return
+
+        evento = getattr(self, 'evento', None)
+        if evento is not None:
+            for p_existente in evento.participantes:
+                if p_existente.nombre.lower() == nombre.lower():
+                    QtWidgets.QMessageBox.warning(self.main_window, 'Duplicado', 'Ya existe un participante con ese nombre')
+                    return
+            
+            if evento.contar_participantes() >= evento.capacidad_total():
+                QtWidgets.QMessageBox.warning(self.main_window, 'Límite', 'No hay espacio')
+                return
+
+        p = Participante(nombre, prefiere, no_prefiere)
+        if evento is not None:
+            evento.agregar_participante(p)
+        
+        self.refrescar_tabla()
+        self.sincronizar_nube() # Sincronizar después de añadir
+
+    def eliminar_participante(self):
+        tabla = self.ui.tablaParticipantes
+        fila = tabla.currentRow()
+        if fila < 0:
+            QtWidgets.QMessageBox.warning(self.main_window, 'Eliminar', 'Selecciona un participante')
+            return
+
+        evento = getattr(self, 'evento', None) or getattr(self.parent_controller, 'evento', None)
+        if evento is not None:
+            evento.eliminar_participante(fila)
+
+        self.refrescar_tabla()
+        self.sincronizar_nube() # Sincronizar después de eliminar
 
     def importar_csv(self):
         # Abro un diálogo para elegir el archivo CSV
@@ -220,18 +284,78 @@ class ControladorParticipantes:
                     has_header = False
 
                 reader = csv.reader(f, dialect)
-                if has_header:
-                    next(reader, None)  # salta la cabecera
+                
+                # --- MEJORA: Mapeo inteligente de columnas ---
+                idx_nombre = 0
+                idx_prefiere = 1
+                idx_no_prefiere = 2
+                
+                rows_for_analysis = []
+                try:
+                    # Leemos unas cuantas filas para analizar el contenido real
+                    for _ in range(5):
+                        r = next(reader, None)
+                        if r: rows_for_analysis.append(r)
+                except Exception:
+                    pass
+                
+                # Volvemos al inicio para procesar de verdad
+                f.seek(0)
+                reader = csv.reader(f, dialect)
+                
+                first_row = rows_for_analysis[0] if rows_for_analysis else None
+                if first_row:
+                    # Palabras clave para cabeceras
+                    cabecera_keywords = ['id', 'nombre', 'name', 'usuario', 'username', 'participante', 'prefiere', 'no_prefiere']
+                    es_cabecera = any(k in str(cell).lower() for cell in first_row for k in cabecera_keywords)
+                    
+                    if es_cabecera or has_header:
+                        print("Cabecera detectada. Analizando estructura...")
+                        next(reader, None) # Saltar la cabecera en el reader real
+                        
+                        # Mapeamos los índices según los nombres de las columnas
+                        for i, cell in enumerate(first_row):
+                            txt = cell.lower().strip()
+                            # Si la columna contiene "nombre" o similar, es nuestra candidata principal
+                            if any(k in txt for k in ['nombre', 'name', 'usuario', 'username', 'participante']):
+                                if 'id' not in txt or len(txt) > 2: # Evitar "id" a secas
+                                    idx_nombre = i
+                            elif any(k in txt for k in ['prefiere', 'deseado', 'prefer', 'gustar']) and 'no' not in txt:
+                                idx_prefiere = i
+                            elif any(k in txt for k in ['no prefiere', 'no deseado', 'no prefer', 'no gustar', 'enemigo']):
+                                idx_no_prefiere = i
+                        
+                        # HEURÍSTICA: Si idx_nombre sigue siendo 0 pero la primera columna de los DATOS es numérica
+                        # y la segunda es texto, probablemente la primera sea un ID.
+                        if idx_nombre == 0 and len(rows_for_analysis) > 1:
+                            data_sample = rows_for_analysis[1] # Primera fila de datos tras cabecera
+                            if len(data_sample) > 1:
+                                val0 = data_sample[0].strip()
+                                val1 = data_sample[1].strip()
+                                # Si col 0 es número y col 1 no lo es, col 1 es el nombre
+                                if val0.isdigit() and not val1.isdigit():
+                                    idx_nombre = 1
+                                    print(f"Heurística aplicada: Cambiando columna nombre de 0 a 1 (Col 0 parece ser ID numérico)")
 
+                    else:
+                        print("No se detectó cabecera. Usando heurística de contenido...")
+                        # Si no hay cabecera, comprobamos si la primera columna es un ID numérico
+                        if len(first_row) > 1:
+                            if first_row[0].strip().isdigit() and not first_row[1].strip().isdigit():
+                                idx_nombre = 1
+                                idx_prefiere = 2
+                                idx_no_prefiere = 3
+                
                 existentes = {p.nombre.strip().lower() for p in evento.participantes}
 
                 for row in reader:
                     try:
                         if not row:
                             continue
-                        nombre = (row[0] if len(row) > 0 else '').strip()
-                        prefiere = (row[1] if len(row) > 1 else '').strip()
-                        no_prefiere = (row[2] if len(row) > 2 else '').strip()
+                        
+                        nombre = (row[idx_nombre] if len(row) > idx_nombre else '').strip()
+                        prefiere = (row[idx_prefiere] if len(row) > idx_prefiere else '').strip()
+                        no_prefiere = (row[idx_no_prefiere] if len(row) > idx_no_prefiere else '').strip()
 
                         if not nombre:
                             sin_nombre += 1
@@ -254,6 +378,7 @@ class ControladorParticipantes:
                         errores += 1
 
             self.refrescar_tabla()
+            self.sincronizar_nube() # Sincronizar importación
             QtWidgets.QMessageBox.information(
                 self.main_window,
                 'Importar CSV',

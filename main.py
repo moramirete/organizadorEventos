@@ -9,13 +9,17 @@ project_root = os.path.dirname(os.path.abspath(__file__))
 # Rutas a añadir:
 interface_path = os.path.join(project_root, 'interfazes', 'python')
 controladores_path = os.path.join(project_root, 'src', 'controladores')
+src_path = os.path.join(project_root, 'src')
 
-# Añadir ambas rutas al sistema:
+# Añadir las rutas al sistema:
 if interface_path not in sys.path:
     sys.path.append(interface_path)
 
 if controladores_path not in sys.path:
     sys.path.append(controladores_path)
+
+if src_path not in sys.path:
+    sys.path.append(src_path)
 # --------------------------------------------------------
 
 # Importar las clases controladoras e interfaces

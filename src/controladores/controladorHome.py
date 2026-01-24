@@ -35,6 +35,81 @@ class ControladorHome:
         # Conecto los botones del menú principal
         self.conectar_senales()
         
+    def set_user_data(self, user_id, nombre, email):
+        """Recibe los datos del login y actualiza la interfaz"""
+        self.current_user_id = user_id
+        self.current_user_name = nombre
+        self.current_user_email = email
+        
+        # --- CARGAR EVENTOS DESDE SUPABASE ---
+        self.cargar_eventos_usuario(user_id)
+        
+        # Actualizamos el texto de bienvenida en la interfaz
+        bienvenida_texto = (
+            f"<html><head/><body><p align=\"center\">"
+            f"<span style=\"font-size:18pt; font-weight:600; color:#333333;\">"
+            f"¡Hola, {nombre}!</span><br/>"
+            f"<span style=\"font-size:14pt; color:#666666;\">Bienvenido al Gestor de Eventos</span>"
+            f"</p></body></html>"
+        )
+        self.ui.lblBienvenida.setText(bienvenida_texto)
+
+    def cargar_eventos_usuario(self, user_id):
+        """Consulta los eventos del usuario en Supabase y los carga en self.eventos"""
+        try:
+            from config.supabase_client import get_supabase_client
+            from modelos.evento import Evento
+            from modelos.participantes import Participante
+            
+            supabase = get_supabase_client()
+            res = supabase.table("eventos").select("*").eq("usuario_id", user_id).execute()
+            
+            self.eventos = []
+            for item in res.data:
+                # Mapeamos los campos de la DB al objeto Evento
+                # 'ubicacion' mapea a 'cliente' en nuestro modelo local
+                ev = Evento(
+                    nombre=item.get("nombre", ""),
+                    num_mesas=item.get("num_mesas", 0),
+                    inv_por_mesa=item.get("inv_por_mesa", 0),
+                    fecha=item.get("fecha"),
+                    cliente=item.get("ubicacion", ""),
+                    telefono=str(item.get("telefono", "")),
+                    id=item.get("id") # Guardamos el ID real de la DB
+                )
+                
+                # --- RECONSTRUIR DATOS DESDE DISTRIBUCION (JSONB) ---
+                dist = item.get("distribucion", {})
+                if isinstance(dist, dict):
+                    # Recuperar configuración básica si está dentro de distribucion
+                    config = dist.get("configuracion", {})
+                    ev.num_mesas = config.get("num_mesas", item.get("num_mesas", 0))
+                    ev.inv_por_mesa = config.get("inv_por_mesa", item.get("inv_por_mesa", 0))
+
+                    # Cargar participantes
+                    lista_p = dist.get("lista_participantes", [])
+                    for p_data in lista_p:
+                        if isinstance(p_data, dict):
+                            p = Participante(
+                                nombre=p_data.get("nombre", ""),
+                                prefiere=p_data.get("prefiere", ""),
+                                no_prefiere=p_data.get("no_prefiere", "")
+                            )
+                            ev.participantes.append(p)
+                    
+                    # Cargar asignaciones de mesas
+                    ev.asignaciones_mesas = dist.get("asignaciones_mesas", [])
+                
+                self.eventos.append(ev)
+                
+            print(f"Se han cargado {len(self.eventos)} eventos completos para el usuario.")
+            
+        except Exception as e:
+            print(f"Error cargando eventos de la nube: {e}")
+
+
+
+
     def conectar_senales(self):
         # Botón para ir a consultar eventos
         self.ui.btnConsultar.clicked.connect(self.abrir_consultar_eventos)

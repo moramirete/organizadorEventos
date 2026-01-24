@@ -112,14 +112,47 @@ class ControladorMesas:
                 QtWidgets.QMessageBox.information(
                     self.main_window,
                     'Éxito',
-                    'Asignación guardada correctamente.'
+                    'Asignación guardada correctamente en la nube.'
                 )
+                self.sincronizar_nube()
             else:
                 QtWidgets.QMessageBox.warning(
                     self.main_window,
                     'Error',
                     'No hay evento para guardar.'
                 )
+
+    def sincronizar_nube(self):
+        """Sincroniza el estado actual del evento (participantes y mesas) con Supabase"""
+        if self.evento is None or not getattr(self.evento, 'id', None):
+            print("No se puede sincronizar: evento sin ID")
+            return
+
+        try:
+            from config.supabase_client import get_supabase_client
+            supabase = get_supabase_client()
+            
+            # Preparamos el objeto distribucion JSONB
+            # IMPORTANTE: Incluimos la configuracion para no borrarla al sincronizar mesas
+            distribucion = {
+                "configuracion": {
+                    "num_mesas": getattr(self.evento, 'num_mesas', 0),
+                    "inv_por_mesa": getattr(self.evento, 'inv_por_mesa', 0)
+                },
+                "lista_participantes": [
+                    {"nombre": p.nombre, "prefiere": p.prefiere, "no_prefiere": p.no_prefiere}
+                    for p in self.evento.participantes
+                ],
+                "asignaciones_mesas": self.evento.asignaciones_mesas
+            }
+            
+            supabase.table("eventos").update({
+                "distribucion": distribucion
+            }).eq("id", self.evento.id).execute()
+            
+            print("Mesas sincronizadas con éxito.")
+        except Exception as e:
+            print(f"Error sincronizando mesas: {e}")
 
     def iniciar(self):
         # Se llama cuando ya tenemos self.evento asignado
@@ -154,7 +187,20 @@ class ControladorMesas:
         # Dejo todas las mesas sin invitados
         for m in self.mesas:
             m['invitados'] = []
+        self.actualizar_evento_y_sincronizar()
         self.refresh_ui()
+
+    def actualizar_evento_y_sincronizar(self):
+        """Copia el estado de self.mesas al objeto evento y lo sube a la nube"""
+        if self.evento is not None:
+            self.evento.asignaciones_mesas = []
+            for mesa in self.mesas:
+                self.evento.asignaciones_mesas.append({
+                    'id': mesa.get('id', 0),
+                    'capacidad': mesa.get('capacidad', 0),
+                    'invitados': mesa.get('invitados', []).copy()
+                })
+            self.sincronizar_nube()
 
     def refresh_ui(self):
         # Actualizo la tabla con las mesas y sus invitados
@@ -202,6 +248,8 @@ class ControladorMesas:
                     mesa_index = (mesa_index + 1) % len(self.mesas)
                 if not placed:
                     QtWidgets.QMessageBox.warning(self.main_window, 'Límite', f'No hay espacio para {nombre}')
+            
+            self.actualizar_evento_y_sincronizar()
             self.refresh_ui()
             return
 
@@ -242,6 +290,7 @@ class ControladorMesas:
                 'No se pudo ubicar a: ' + ', '.join(excluidos)
             )
 
+        self.actualizar_evento_y_sincronizar()
         self.refresh_ui()
 
     def asignar_seleccionado(self):
@@ -268,6 +317,8 @@ class ControladorMesas:
         m['invitados'].append(nombre)
         # Quitar invitado de la lista de pendientes
         lista.takeItem(lista.currentRow())
+        
+        self.actualizar_evento_y_sincronizar()
         self.refresh_ui()
 
     def quitar_seleccionado(self):
@@ -286,6 +337,8 @@ class ControladorMesas:
         nombre = m['invitados'].pop()
         # Lo vuelvo a poner en la lista de invitados sin mesa
         self.ui.listaInvitados.addItem(nombre)
+        
+        self.actualizar_evento_y_sincronizar()
         self.refresh_ui()
 
     def exportar_csv(self):

@@ -266,7 +266,24 @@ class controladorModificarEventos:
         if resp != QtWidgets.QMessageBox.Yes:
             return
 
-        # Intento eliminar el evento usando la misma referencia
+        # 1. ELIMINAR DE SUPABASE (Nube)
+        try:
+            from config.supabase_client import get_supabase_client
+            supabase = get_supabase_client()
+            
+            if hasattr(evento_obj, 'id') and evento_obj.id:
+                res = supabase.table("eventos").delete().eq("id", evento_obj.id).execute()
+                print(f"Evento {nombre} eliminado de la nube con éxito.")
+            else:
+                print("El evento no tiene ID, omitiendo borrado en la nube.")
+        except Exception as e:
+            QtWidgets.QMessageBox.warning(
+                self.main_window,
+                'Error en la nube',
+                f'El evento se borrará localmente, pero hubo un error en Supabase:\n{e}'
+            )
+
+        # 2. ELIMINAR DE LA LISTA LOCAL (Memoria)
         eventos_globales = getattr(self.parent_controller, 'eventos', [])
         try:
             idx = next(i for i, ev in enumerate(eventos_globales) if ev is evento_obj)

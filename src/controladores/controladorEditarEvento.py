@@ -150,11 +150,65 @@ class controladorEditarEvento:
                 self.evento.asignaciones_mesas = nuevas_asignaciones
 
         self.cambios_guardados = True
-        QtWidgets.QMessageBox.information(
-            self.main_window,
-            'Guardar',
-            'Evento guardado correctamente.'
-        )
+        
+        # --- GUARDAR EN SUPABASE ---
+        try:
+            from config.supabase_client import get_supabase_client
+            supabase = get_supabase_client()
+            
+            # Obtenemos los datos del usuario actual desde el controlador padre (Home)
+            # En editar, subimos un nivel más porque el padre es controladorModificarEventos
+            home_controller = self.parent_controller.parent_controller
+            usuario_id = home_controller.current_user_id
+            usuario_nombre = home_controller.current_user_name
+            usuario_email = getattr(home_controller, 'current_user_email', None)
+
+            # Sincronizar perfil (seguridad FK)
+            try:
+                supabase.table("usuarios").upsert({
+                    "id": usuario_id,
+                    "username": usuario_nombre,
+                    "email": usuario_email
+                }).execute()
+            except Exception as e:
+                print(f"Error sincronizando perfil en editar: {e}")
+
+            # Preparamos los datos completos para Supabase
+            # Nota: 'num_mesas' e 'inv_por_mesa' van dentro de distribucion
+            datos_evento = {
+                "id": self.evento.id, # IMPORTANTE: Usamos el ID para actualizar
+                "usuario_id": usuario_id,
+                "nombre": nombre,
+                "fecha": fecha,
+                "ubicacion": cliente,
+                "telefono": int(telefono) if telefono.isdigit() else 0,
+                "num_participantes": num_mesas * inv_por_mesa,
+                "distribucion": {
+                    "configuracion": {
+                        "num_mesas": num_mesas,
+                        "inv_por_mesa": inv_por_mesa
+                    },
+                    "lista_participantes": [
+                        {"nombre": p.nombre, "prefiere": p.prefiere, "no_prefiere": p.no_prefiere}
+                        for p in self.evento.participantes
+                    ],
+                    "asignaciones_mesas": self.evento.asignaciones_mesas
+                }
+            }
+            
+            supabase.table("eventos").upsert(datos_evento).execute()
+
+            QtWidgets.QMessageBox.information(
+                self.main_window,
+                'Guardar',
+                'Cambios guardados correctamente en la nube.'
+            )
+        except Exception as e:
+            QtWidgets.QMessageBox.critical(
+                self.main_window,
+                'Error al Guardar',
+                f'No se pudo actualizar el evento en la nube: {str(e)}'
+            )
     
     def volver_ventana_anterior(self):
         # Antes de volver, recargo los eventos en el controlador padre si tiene el método
