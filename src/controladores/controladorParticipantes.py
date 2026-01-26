@@ -36,8 +36,20 @@ class ControladorParticipantes:
         self.evento = getattr(self, 'evento', None)
 
         self.conectar_botones()
+        # Añadimos el botón de exportación dinámicamente si no existe
+        self.configurar_boton_exportar()
         # Si el evento ya tiene participantes los cargamos en la tabla
         self.refrescar_tabla()
+    
+    def configurar_boton_exportar(self):
+        """Añade el botón de exportación a la interfaz"""
+        if not hasattr(self.ui, 'btnExportarCSV'):
+            self.ui.btnExportarCSV = QtWidgets.QPushButton(self.main_window)
+            self.ui.btnExportarCSV.setText("Exportar CSV")
+            self.ui.btnExportarCSV.setStyleSheet(self.ui.btnImportarCSV.styleSheet())
+            # Lo insertamos en la caja de botones de abajo, antes del de Cancelar
+            self.ui.bottomButtons.insertWidget(2, self.ui.btnExportarCSV)
+            self.ui.btnExportarCSV.clicked.connect(self.exportar_csv)
         
     def conectar_botones(self):
         # Botón para crear un participante nuevo
@@ -179,19 +191,8 @@ class ControladorParticipantes:
             from config.supabase_client import get_supabase_client
             supabase = get_supabase_client()
             
-            # Preparamos el objeto distribucion JSONB
-            # IMPORTANTE: Incluimos la configuracion para no borrarla al sincronizar invitados
-            distribucion = {
-                "configuracion": {
-                    "num_mesas": getattr(evento, 'num_mesas', 0),
-                    "inv_por_mesa": getattr(evento, 'inv_por_mesa', 0)
-                },
-                "lista_participantes": [
-                    {"nombre": p.nombre, "prefiere": p.prefiere, "no_prefiere": p.no_prefiere}
-                    for p in evento.participantes
-                ],
-                "asignaciones_mesas": evento.asignaciones_mesas
-            }
+            # Preparamos el objeto distribucion JSONB usando el nuevo formato Android
+            distribucion = evento.to_android_json()
             
             # Solo actualizamos la columna distribucion y num_participantes
             supabase.table("eventos").update({
@@ -202,34 +203,6 @@ class ControladorParticipantes:
             print(f"Sincronizado con éxito: {len(evento.participantes)} invitados.")
         except Exception as e:
             print(f"Error sincronizando con la nube: {e}")
-
-    def crear_participante(self):
-        # ... (código anterior igual)
-        nombre = self.ui.leNombreParticipante.text().strip()
-        prefiere = self.ui.lePrefiereCon.text().strip()
-        no_prefiere = self.ui.leNoPrefiereCon.text().strip()
-
-        if not nombre:
-            QtWidgets.QMessageBox.warning(self.main_window, 'Validación', 'El nombre es obligatorio')
-            return
-
-        evento = getattr(self, 'evento', None)
-        if evento is not None:
-            for p_existente in evento.participantes:
-                if p_existente.nombre.lower() == nombre.lower():
-                    QtWidgets.QMessageBox.warning(self.main_window, 'Duplicado', 'Ya existe un participante con ese nombre')
-                    return
-            
-            if evento.contar_participantes() >= evento.capacidad_total():
-                QtWidgets.QMessageBox.warning(self.main_window, 'Límite', 'No hay espacio')
-                return
-
-        p = Participante(nombre, prefiere, no_prefiere)
-        if evento is not None:
-            evento.agregar_participante(p)
-        
-        self.refrescar_tabla()
-        self.sincronizar_nube() # Sincronizar después de añadir
 
     def eliminar_participante(self):
         tabla = self.ui.tablaParticipantes
@@ -306,7 +279,7 @@ class ControladorParticipantes:
                 first_row = rows_for_analysis[0] if rows_for_analysis else None
                 if first_row:
                     # Palabras clave para cabeceras
-                    cabecera_keywords = ['id', 'nombre', 'name', 'usuario', 'username', 'participante', 'prefiere', 'no_prefiere']
+                    cabecera_keywords = ['id', 'nombre', 'name', 'usuario', 'username', 'participante', 'invitado', 'asistente', 'prefiere', 'no_prefiere', 'deseado', 'prefer', 'gustar']
                     es_cabecera = any(k in str(cell).lower() for cell in first_row for k in cabecera_keywords)
                     
                     if es_cabecera or has_header:
@@ -317,12 +290,12 @@ class ControladorParticipantes:
                         for i, cell in enumerate(first_row):
                             txt = cell.lower().strip()
                             # Si la columna contiene "nombre" o similar, es nuestra candidata principal
-                            if any(k in txt for k in ['nombre', 'name', 'usuario', 'username', 'participante']):
+                            if any(k in txt for k in ['nombre', 'name', 'usuario', 'username', 'participante', 'invitado', 'asistente']):
                                 if 'id' not in txt or len(txt) > 2: # Evitar "id" a secas
                                     idx_nombre = i
-                            elif any(k in txt for k in ['prefiere', 'deseado', 'prefer', 'gustar']) and 'no' not in txt:
+                            elif any(k in txt for k in ['prefiere', 'deseado', 'prefer', 'gustar', 'acompañante', 'pareja', 'con']) and 'no' not in txt:
                                 idx_prefiere = i
-                            elif any(k in txt for k in ['no prefiere', 'no deseado', 'no prefer', 'no gustar', 'enemigo']):
+                            elif any(k in txt for k in ['no prefiere', 'no deseado', 'no prefer', 'no gustar', 'enemigo', 'evitar']):
                                 idx_no_prefiere = i
                         
                         # HEURÍSTICA: Si idx_nombre sigue siendo 0 pero la primera columna de los DATOS es numérica
@@ -335,6 +308,9 @@ class ControladorParticipantes:
                                 # Si col 0 es número y col 1 no lo es, col 1 es el nombre
                                 if val0.isdigit() and not val1.isdigit():
                                     idx_nombre = 1
+                                    # IMPORTANTE: Si idx_nombre se mueve a 1, mover los otros si coinciden
+                                    if idx_prefiere == 1: idx_prefiere = 2
+                                    if idx_no_prefiere == 2: idx_no_prefiere = 3
                                     print(f"Heurística aplicada: Cambiando columna nombre de 0 a 1 (Col 0 parece ser ID numérico)")
 
                     else:
@@ -345,6 +321,11 @@ class ControladorParticipantes:
                                 idx_nombre = 1
                                 idx_prefiere = 2
                                 idx_no_prefiere = 3
+                            else:
+                                # Valores por defecto sin cabecera
+                                idx_nombre = 0
+                                idx_prefiere = 1
+                                idx_no_prefiere = 2
                 
                 existentes = {p.nombre.strip().lower() for p in evento.participantes}
 
@@ -356,6 +337,17 @@ class ControladorParticipantes:
                         nombre = (row[idx_nombre] if len(row) > idx_nombre else '').strip()
                         prefiere = (row[idx_prefiere] if len(row) > idx_prefiere else '').strip()
                         no_prefiere = (row[idx_no_prefiere] if len(row) > idx_no_prefiere else '').strip()
+
+                        # --- LOGICA DE SEPARACIÓN SI SE ENCUENTRA COMA EN EL NOMBRE ---
+                        # Escenario A: Nombre tiene coma, prefiere está vacío
+                        # Escenario B: Nombre tiene coma, prefiere tiene LO MISMO (redundancia)
+                        if (',' in nombre or ';' in nombre) and (not prefiere or prefiere == nombre):
+                            separador = ',' if ',' in nombre else ';'
+                            partes = [p.strip() for p in nombre.split(separador, 1)]
+                            if len(partes) == 2:
+                                nombre = partes[0]
+                                prefiere = partes[1]
+                                print(f"Separado nombre '{partes[0]}' y preferencia '{partes[1]}'")
 
                         if not nombre:
                             sin_nombre += 1
@@ -391,3 +383,40 @@ class ControladorParticipantes:
             )
         except Exception as e:
             QtWidgets.QMessageBox.critical(self.main_window, 'Importar CSV', f'Error al importar CSV:\n{e}')
+
+    def exportar_csv(self):
+        """Exporta la lista de participantes a un archivo CSV con columnas separadas"""
+        evento = getattr(self, 'evento', None) or getattr(self.parent_controller, 'evento', None)
+        if not evento or not evento.participantes:
+            QtWidgets.QMessageBox.warning(self.main_window, 'Exportar CSV', 'No hay participantes para exportar.')
+            return
+
+        options = QtWidgets.QFileDialog.Options()
+        filename, _ = QtWidgets.QFileDialog.getSaveFileName(
+            self.main_window,
+            'Guardar lista de invitados',
+            '',
+            'CSV Files (*.csv);;All Files (*)',
+            options=options
+        )
+        if not filename:
+            return
+
+        try:
+            with open(filename, 'w', newline='', encoding='utf-8-sig') as f:
+                writer = csv.writer(f, delimiter=';') # Usamos punto y coma por ser común en Excel español
+                
+                # Cabeceras
+                writer.writerow(['Nombre', 'Acompaniante Deseado', 'Acompaniante No Deseado'])
+                
+                # Datos
+                for p in evento.participantes:
+                    writer.writerow([p.nombre, p.prefiere, p.no_prefiere])
+
+            QtWidgets.QMessageBox.information(
+                self.main_window, 
+                'Exportar CSV', 
+                f'Lista exportada correctamente a:\n{filename}'
+            )
+        except Exception as e:
+            QtWidgets.QMessageBox.critical(self.main_window, 'Exportar CSV', f'Error al exportar:\n{e}')

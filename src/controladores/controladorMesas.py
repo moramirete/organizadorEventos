@@ -39,7 +39,22 @@ class ControladorMesas:
         self.mesas = []
         
         self.conectar_botones()
+        # Añadimos el círculo de estado al header dinámicamente
+        self.configurar_indicador_estado()
         # El padre debe asignar self.evento y luego llamar a iniciar()
+
+    def configurar_indicador_estado(self):
+        """Crea el círculo de estado en la parte superior derecha del header"""
+        if not hasattr(self.ui, 'lblStatus'):
+            self.ui.lblStatus = QtWidgets.QLabel(self.ui.header)
+            self.ui.lblStatus.setFixedSize(24, 24)
+            self.ui.lblStatus.setStyleSheet(
+                "QLabel { background-color: #7faef5; border-radius: 12px; border: 2px solid white; }"
+            )
+            # El header tiene un hlHeader, añadimos el label al layout
+            self.ui.hlHeader.addWidget(self.ui.lblStatus)
+            # Alineamos el título al centro para que el status no lo mueva
+            self.ui.titulo.setContentsMargins(24, 0, 0, 0) # Compensar el círculo a la derecha
         
     def conectar_botones(self):
         # Botón para volver al menú principal
@@ -132,19 +147,8 @@ class ControladorMesas:
             from config.supabase_client import get_supabase_client
             supabase = get_supabase_client()
             
-            # Preparamos el objeto distribucion JSONB
-            # IMPORTANTE: Incluimos la configuracion para no borrarla al sincronizar mesas
-            distribucion = {
-                "configuracion": {
-                    "num_mesas": getattr(self.evento, 'num_mesas', 0),
-                    "inv_por_mesa": getattr(self.evento, 'inv_por_mesa', 0)
-                },
-                "lista_participantes": [
-                    {"nombre": p.nombre, "prefiere": p.prefiere, "no_prefiere": p.no_prefiere}
-                    for p in self.evento.participantes
-                ],
-                "asignaciones_mesas": self.evento.asignaciones_mesas
-            }
+            # Preparamos el objeto distribucion JSONB usando el nuevo formato Android
+            distribucion = self.evento.to_android_json()
             
             supabase.table("eventos").update({
                 "distribucion": distribucion
@@ -210,6 +214,9 @@ class ControladorMesas:
             tabla.setItem(i, 0, QtWidgets.QTableWidgetItem(str(m['id'])))
             tabla.setItem(i, 1, QtWidgets.QTableWidgetItem(', '.join([p for p in m['invitados']])))
 
+        # Actualizamos el color del indicador basándonos en el estado actual
+        self.actualizar_indicador_estado()
+
         # Relleno la lista con los invitados que todavía no tienen mesa
         lista = self.ui.listaInvitados
         lista.clear()
@@ -261,11 +268,15 @@ class ControladorMesas:
             if getattr(p, 'prefiere', ''):
                 amistades = [s.strip() for s in p.prefiere.split(',') if s.strip()]
             if getattr(p, 'no_prefiere', ''):
+                # Limpiamos cada nombre de la lista
                 enemistades = [s.strip() for s in p.no_prefiere.split(',') if s.strip()]
-            participantes_obj.append(AlgPersona(p.nombre, amistades=amistades, enemistades=enemistades))
+            
+            # Pasamos p.nombre también bien limpio
+            participantes_obj.append(AlgPersona(p.nombre.strip(), amistades=amistades, enemistades=enemistades))
 
         tamano_mesa = int(self.evento.inv_por_mesa) if self.evento else 4
-        solucion, excluidos = asignar_mesas_optimizando(participantes_obj, tamano_mesa)
+        # La función ahora devuelve 3 valores: (solucion, excluidos, metricas)
+        solucion, excluidos, metricas = asignar_mesas_optimizando(participantes_obj, tamano_mesa)
 
         if solucion is None:
             QtWidgets.QMessageBox.warning(self.main_window, 'No factible', 'No se pudo asignar mesas con el algoritmo.')
@@ -394,3 +405,71 @@ class ControladorMesas:
                 'Exportar CSV',
                 f'Error al exportar CSV:\n{e}'
             )
+
+    def actualizar_indicador_estado(self):
+        """Actualiza el color del círculo y el detalle de los conflictos"""
+        if not hasattr(self.ui, 'lblStatus'):
+            return
+
+        # Preparamos los objetos para el algoritmo para evaluar el estado actual
+        from algoritmos.algoritmo import Persona as AlgPersona
+        participantes_obj = []
+        for p in (self.evento.participantes if self.evento else []):
+            amistades = [s.strip() for s in p.prefiere.split(',') if s.strip()]
+            enemistades = [s.strip() for s in getattr(p, 'no_prefiere', '').split(',') if s.strip()]
+            participantes_obj.append(AlgPersona(p.nombre.strip(), amistades=amistades, enemistades=enemistades))
+
+        # Evaluamos el estado actual de las mesas recolectando mensajes específicos
+        mensajes_error = []
+        mensajes_aviso = []
+        
+        nombres_asignados = {} # nombre_minus -> mesa_id
+        for m in self.mesas:
+            m_id = m['id']
+            # Conflictos de capacidad
+            if len(m['invitados']) > m['capacidad']:
+                mensajes_error.append(f"Mesa {m_id}: Se supera la capacidad ({len(m['invitados'])}/{m['capacidad']})")
+            for inv in m['invitados']:
+                nombres_asignados[inv.strip().lower()] = m_id
+
+        # Conflictos de enemistades (HARD) y deseos (SOFT)
+        total_amistades = 0
+        cumplidas = 0
+        for p in participantes_obj:
+            p_nombre = p.nombre.lower()
+            if p_nombre in nombres_asignados:
+                mesa_p = nombres_asignados[p_nombre]
+                
+                # Enemistades (HARD)
+                for enemigo in p.enemistades:
+                    if nombres_asignados.get(enemigo.lower()) == mesa_p:
+                        mensajes_error.append(f"Mesa {mesa_p}: {p.nombre} no debería estar con {enemigo}")
+                
+                # Deseos (SOFT)
+                for amigo in p.amistades:
+                    total_amistades += 1
+                    if nombres_asignados.get(amigo.lower()) == mesa_p:
+                        cumplidas += 1
+                    else:
+                        # Si es un deseo mutuo, lo avisamos más fuerte?
+                        mensajes_aviso.append(f"{p.nombre} prefiere estar con {amigo}")
+
+        if mensajes_error:
+            color = "#FF4B4B" # Rojo
+            tooltip = "Conflictos Críticos:\n- " + "\n- ".join(list(set(mensajes_error)))
+        elif total_amistades > 0 and cumplidas < total_amistades:
+            color = "#FFA500" # Naranja
+            # Filtramos avisos para no saturar si hay muchos, o mostramos los pendientes
+            tooltip = f"Sugerencias ({cumplidas}/{total_amistades} logrados):\n- " + "\n- ".join(list(set(mensajes_aviso))[:10])
+            if len(set(mensajes_aviso)) > 10: tooltip += "\n...y más"
+        elif total_amistades > 0:
+            color = "#4CAF50" # Verde
+            tooltip = "¡Perfecto! Todas las preferencias se han cumplido."
+        else:
+            color = "#1E73E8" # Azul neutro
+            tooltip = "No hay preferencias configuradas para los invitados asignados."
+
+        self.ui.lblStatus.setStyleSheet(
+            f"QLabel {{ background-color: {color}; border-radius: 12px; border: 2px solid white; }}"
+        )
+        self.ui.lblStatus.setToolTip(tooltip)

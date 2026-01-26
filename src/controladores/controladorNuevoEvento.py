@@ -135,22 +135,12 @@ class controladorNuevoEvento:
             # Nota: 'num_mesas' e 'inv_por_mesa' no están en la DB, van dentro de distribucion
             datos_evento = {
                 "usuario_id": usuario_id,
-                "nombre": nombre,
+                "ubicacion": nombre, # En la DB se usa 'nombre' como título
                 "fecha": fecha,
                 "ubicacion": cliente,
                 "telefono": int(telefono) if telefono.isdigit() else 0,
                 "num_participantes": len(self.evento.participantes),
-                "distribucion": {
-                    "configuracion": {
-                        "num_mesas": num_mesas,
-                        "inv_por_mesa": inv_por_mesa
-                    },
-                    "lista_participantes": [
-                        {"nombre": p.nombre, "prefiere": p.prefiere, "no_prefiere": p.no_prefiere}
-                        for p in self.evento.participantes
-                    ],
-                    "asignaciones_mesas": self.evento.asignaciones_mesas
-                }
+                "distribucion": self.evento.to_android_json()
             }
 
             # Si ya tenemos ID, lo incluimos para que haga UPSERT (actualizar en vez de insertar)

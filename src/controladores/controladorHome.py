@@ -79,14 +79,56 @@ class ControladorHome:
                 )
                 
                 # --- RECONSTRUIR DATOS DESDE DISTRIBUCION (JSONB) ---
-                dist = item.get("distribucion", {})
-                if isinstance(dist, dict):
-                    # Recuperar configuración básica si está dentro de distribucion
-                    config = dist.get("configuracion", {})
-                    ev.num_mesas = config.get("num_mesas", item.get("num_mesas", 0))
-                    ev.inv_por_mesa = config.get("inv_por_mesa", item.get("inv_por_mesa", 0))
+                dist = item.get("distribucion", [])
+                if isinstance(dist, list):
+                    # Nuevo formato: [ {numero, capacidad, participantes: [{nombre, prefiere, noPrefiere}] }, ... ]
+                    
+                    # Primero cargamos a todos los participantes para reconstruir ev.participantes
+                    # Y guardamos las asignaciones de mesas
+                    ev.participantes = []
+                    ev.asignaciones_mesas = []
+                    
+                    # Buscamos la mesa 0 (invitados sin asignar) si existe para la lista general
+                    # Y procesamos el resto de mesas
+                    nombres_añadidos = set()
+                    
+                    for mesa in dist:
+                        m_num = mesa.get("numero", 0)
+                        m_cap = mesa.get("capacidad", 0)
+                        m_parts = mesa.get("participantes", [])
+                        
+                        # Reconstruimos la lista local de participantes del evento (ev.participantes)
+                        invitados_nombres_mesa = []
+                        for p_data in m_parts:
+                            nombre = p_data.get("nombre", "")
+                            if nombre and nombre not in nombres_añadidos:
+                                p = Participante(
+                                    nombre=nombre,
+                                    prefiere=p_data.get("prefiere", ""),
+                                    # Soportamos ambos nombres de campo para transición suave
+                                    no_prefiere=p_data.get("noPrefiere", p_data.get("no_prefiere", ""))
+                                )
+                                ev.participantes.append(p)
+                                nombres_añadidos.add(nombre)
+                            invitados_nombres_mesa.append(nombre)
+                        
+                        # Si es una mesa real (>0), la añadimos a asignaciones_mesas
+                        if m_num > 0:
+                            ev.asignaciones_mesas.append({
+                                'id': m_num,
+                                'capacidad': m_cap,
+                                'invitados': invitados_nombres_mesa
+                            })
+                            # También intentamos actualizar num_mesas e inv_por_mesa del evento
+                            ev.num_mesas = max(ev.num_mesas, m_num)
+                            ev.inv_por_mesa = max(ev.inv_por_mesa, m_cap)
 
-                    # Cargar participantes
+                elif isinstance(dist, dict):
+                    # Formato antiguo (fallback)
+                    config = dist.get("configuracion", {})
+                    ev.num_mesas = config.get("num_mesas", ev.num_mesas)
+                    ev.inv_por_mesa = config.get("inv_por_mesa", ev.inv_por_mesa)
+                    
                     lista_p = dist.get("lista_participantes", [])
                     for p_data in lista_p:
                         if isinstance(p_data, dict):
@@ -97,7 +139,6 @@ class ControladorHome:
                             )
                             ev.participantes.append(p)
                     
-                    # Cargar asignaciones de mesas
                     ev.asignaciones_mesas = dist.get("asignaciones_mesas", [])
                 
                 self.eventos.append(ev)

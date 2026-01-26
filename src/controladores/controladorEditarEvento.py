@@ -183,17 +183,7 @@ class controladorEditarEvento:
                 "ubicacion": cliente,
                 "telefono": int(telefono) if telefono.isdigit() else 0,
                 "num_participantes": num_mesas * inv_por_mesa,
-                "distribucion": {
-                    "configuracion": {
-                        "num_mesas": num_mesas,
-                        "inv_por_mesa": inv_por_mesa
-                    },
-                    "lista_participantes": [
-                        {"nombre": p.nombre, "prefiere": p.prefiere, "no_prefiere": p.no_prefiere}
-                        for p in self.evento.participantes
-                    ],
-                    "asignaciones_mesas": self.evento.asignaciones_mesas
-                }
+                "distribucion": self.evento.to_android_json()
             }
             
             supabase.table("eventos").upsert(datos_evento).execute()

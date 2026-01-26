@@ -89,9 +89,28 @@ class ControladorLogin:
                 QMessageBox.critical(self.main_window, "Error", f"No se pudo completar el registro: {error_msg}")
 
     def login_supabase(self):
-        """Login recuperando el nombre de metadata"""
-        email = self.ui.etEmail.text().strip()
+        """Login recuperando el nombre de metadata (admite email o username)"""
+        credencial = self.ui.etEmail.text().strip()
         password = self.ui.etPassword.text().strip()
+
+        if not credencial or not password:
+            QMessageBox.warning(self.main_window, "Validación", "Por favor, introduce tus credenciales.")
+            return
+
+        email = credencial
+        # Si no parece un email (no tiene @), buscamos el username en la DB
+        if "@" not in credencial:
+            try:
+                res_user = self.supabase.table("usuarios").select("email").eq("username", credencial).execute()
+                if res_user.data and len(res_user.data) > 0:
+                    email = res_user.data[0].get("email")
+                else:
+                    QMessageBox.critical(self.main_window, "Error", f"No se encontró ningún usuario con el nombre: {credencial}")
+                    return
+            except Exception as e:
+                print(f"Error buscando username: {e}")
+                QMessageBox.critical(self.main_window, "Error", "Error al conectar con la base de datos.")
+                return
 
         try:
             res = self.supabase.auth.sign_in_with_password({"email": email, "password": password})
@@ -101,13 +120,12 @@ class ControladorLogin:
                 nombre_usuario = metadata.get("full_name", "Usuario")
                 
                 # --- SINCRONIZACIÓN AUTOMÁTICA DE PERFIL ---
-                # Aseguramos que el perfil existe en la tabla 'usuarios'
                 self.sincronizar_perfil(res.user.id, nombre_usuario, email)
                 
                 # Pasamos ID, Nombre y Email al Home
                 self.abrir_home(res.user.id, nombre_usuario, email)
         except Exception:
-            QMessageBox.critical(self.main_window, "Error", "Correo o contraseña incorrectos.")
+            QMessageBox.critical(self.main_window, "Error", "Credenciales incorrectas.")
 
     def abrir_home(self, user_id, nombre, email):
         from controladorHome import ControladorHome
@@ -134,6 +152,12 @@ class ControladorLogin:
         texto_boton = "Iniciar Sesión" if self.is_login_mode else "Registrarse"
         self.ui.btnAction.setText(texto_boton)
         self.ui.tvFormTitle.setText(texto_boton)
+        
+        # Actualizamos el placeholder para indicar que se admite username
+        if self.is_login_mode:
+            self.ui.etEmail.setPlaceholderText("Correo o nombre de usuario")
+        else:
+            self.ui.etEmail.setPlaceholderText("Correo electrónico")
 
     def sincronizar_perfil(self, user_id, nombre, email):
         """Asegura que el usuario existe en la tabla 'usuarios' para cumplir con FKs"""

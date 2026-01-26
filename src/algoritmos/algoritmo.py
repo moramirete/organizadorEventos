@@ -1,178 +1,129 @@
-from ortools.sat.python import cp_model
 from typing import List, Dict, Tuple, Optional
 
 class Persona:
     """Clase para representar a un participante con sus relaciones."""
     def __init__(self, nombre: str, amistades: Optional[List[str]] = None, enemistades: Optional[List[str]] = None):
         self.nombre = nombre
-        self.amistades = amistades or []
-        self.enemistades = enemistades or []
+        self.amistades = [a.strip() for a in (amistades or []) if a.strip()]
+        self.enemistades = [e.strip() for e in (enemistades or []) if e.strip()]
     
     def __repr__(self):
         return self.nombre
 
-# --- Datos de Ejemplo ---
-personas = [
-    Persona("Ana", amistades=["Luis"]),
-    Persona("Luis", amistades=["Ana", "Sofía"]),
-    Persona("Marta", enemistades=["Pedro"]),
-    Persona("Pedro", enemistades=["Marta"]),
-    Persona("Sofía", amistades=["Luis"], enemistades=["Marta"]),
-]
-
-# ----------------------------------------------------------------------
-# FUNCIONES AUXILIARES PARA EL ALGORITMO DE OPTIMIZACIÓN
-# ----------------------------------------------------------------------
-
-def get_constraints_count(participantes: List[Persona]) -> Dict[str, int]:
-    """Calcula el número total de restricciones por persona para la heurística de eliminación."""
-    count = {}
-    nombres_actuales = {p.nombre for p in participantes}
-    for p in participantes:
-        count[p.nombre] = 0
-        # Amistades (Must be together)
-        for amigo in p.amistades:
-            if amigo in nombres_actuales:
-                count[p.nombre] += 1
-        # Enemistades (Must be separate)
-        for enemigo in p.enemistades:
-            if enemigo in nombres_actuales:
-                count[p.nombre] += 1
-    return count
-
-def solve_subproblem(participantes: List[Persona], tamano_mesa: int) -> Optional[Dict[str, int]]:
-    """Intenta resolver el subproblema con el conjunto actual de participantes."""
-    model = cp_model.CpModel()
-    nombres = [p.nombre for p in participantes]
-    
-    if not nombres:
-        return {}
-    
-    # Calcular el número mínimo de mesas necesarias.
-    num_mesas = len(participantes) // tamano_mesa
-    if len(participantes) % tamano_mesa != 0:
-         num_mesas += 1
-    num_mesas = max(1, num_mesas) # Asegurar al menos 1 mesa si hay gente
-
-    # 1. Variables: mesa asignada a cada persona
-    mesas = {
-        nombre: model.NewIntVar(0, num_mesas - 1, nombre)
-        for nombre in nombres
-    }
-    
-    # 2. Restricciones de Amistad y Enemistad
-    nombres_set = set(nombres)
-    for p in participantes:
-        for amigo in p.amistades:
-            if amigo in nombres_set:
-                model.Add(mesas[p.nombre] == mesas[amigo])
-        for enemigo in p.enemistades:
-            if enemigo in nombres_set:
-                model.Add(mesas[p.nombre] != mesas[enemigo])
-
-    # 3. Restricción de tamaño máximo por mesa
-    for m in range(num_mesas):
-        indicators = []
-        for nombre in nombres:
-            b = model.NewBoolVar(f"{nombre}_en_mesa_{m}")
-            # Si mesa[nombre] == m, entonces b = 1
-            model.Add(mesas[nombre] == m).OnlyEnforceIf(b)
-            model.Add(mesas[nombre] != m).OnlyEnforceIf(b.Not())
-            indicators.append(b)
-        model.Add(sum(indicators) <= tamano_mesa)
-
-    # 4. Resolver
-    solver = cp_model.CpSolver()
-    solver.parameters.max_time_in_seconds = 5.0 
-    status = solver.Solve(model)
-
-    if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
-        return {nombre: solver.Value(mesas[nombre]) for nombre in nombres}
-    else:
-        return None
-
-# ----------------------------------------------------------------------
-# FUNCIÓN PRINCIPAL SOLUCIÓN ITERATIVA
-# ----------------------------------------------------------------------
-
-def asignar_mesas_optimizando(participantes: List[Persona], tamano_mesa: int) -> Tuple[Optional[Dict[str, int]], List[str]]:
+def asignar_mesas_optimizando(participantes: List[Persona], tamano_mesa: int) -> Tuple[Optional[Dict[str, int]], List[str], Dict[str, int]]:
     """
-    Intenta asignar mesas. Si falla, elimina iterativamente a la persona 
-    más restringida hasta encontrar una solución factible.
-    Devuelve: (Solución de mesas, Lista de nombres excluidos)
+    Asigna mesas buscando el óptimo global de satisfacción.
+    Versión Pure-Python (sin dependencias de ortools).
+    Devuelve: (Asignación, Excluidos, Metricas_Satisfaccion)
     """
+    if not participantes:
+        return {}, [], {"total": 0, "cumplidos": 0}
+
+    # 1. Normalización y Estructura de Datos
+    canonical_to_original = {p.nombre.strip().lower(): p.nombre for p in participantes}
+    nombres_canonicos = list(canonical_to_original.keys())
     
-    participantes_restantes = list(participantes)
-    personas_excluidas: List[str] = []
-    solucion: Optional[Dict[str, int]] = None
+    # Mapas de relaciones (en minúsculas)
+    amigos_map = {p.nombre.strip().lower(): [a.lower() for a in p.amistades] for p in participantes}
+    enemigos_map = {p.nombre.strip().lower(): [e.lower() for e in p.enemistades] for p in participantes}
+
+    num_participantes = len(nombres_canonicos)
+    num_mesas = (num_participantes + tamano_mesa - 1) // tamano_mesa
+    num_mesas = max(1, num_mesas)
+
+    # 2. Algoritmo Greedy con Heurística de Satisfacción
+    # Inicializamos mesas vacías
+    mesas_data = [[] for _ in range(num_mesas)]
+    asignacion = {} # nombre_canon -> mesa_index
     
-    # Bucle de relajación: se ejecuta mientras no haya solución y queden personas
-    while solucion is None and participantes_restantes:
+    # Ordenamos a los participantes por "importancia" (quienes tienen más restricciones/deseos van primero)
+    def calcular_peso(nombre):
+        return len(amigos_map.get(nombre, [])) + len(enemigos_map.get(nombre, []))
+    
+    participantes_ordenados = sorted(nombres_canonicos, key=calcular_peso, reverse=True)
+
+    for p in participantes_ordenados:
+        best_mesa = -1
+        max_score = -1000 # Puntuación de "felicidad" si va en esa mesa
         
-        # Intenta resolver con el subconjunto actual de personas
-        solucion = solve_subproblem(participantes_restantes, tamano_mesa)
-
-        if solucion is not None:
-            break
+        for m_idx in range(num_mesas):
+            # A. Comprobar Hard Constraints
+            # 1. Capacidad
+            if len(mesas_data[m_idx]) >= tamano_mesa:
+                continue
             
-        # Si falla (solucion is None), identifica y elimina al candidato.
+            # 2. Enemistades (HARD)
+            es_viable = True
+            for otro in mesas_data[m_idx]:
+                if otro in enemigos_map.get(p, []) or p in enemigos_map.get(otro, []):
+                    es_viable = False
+                    break
+            if not es_viable:
+                continue
+            
+            # B. Calcular Satisfacción (SOFT)
+            score = 0
+            for otro in mesas_data[m_idx]:
+                # Si p quiere estar con 'otro'
+                if otro in amigos_map.get(p, []):
+                    score += 10
+                # Si 'otro' quiere estar con p
+                if p in amigos_map.get(otro, []):
+                    score += 10
+            
+            # Preferimos mesas más llenas si hay empate de score? No, mejor coger la primera.
+            if score > max_score:
+                max_score = score
+                best_mesa = m_idx
         
-        # 1. Heurística: Encontrar a la persona con más restricciones
-        contadores = get_constraints_count(participantes_restantes)
-        
-        candidato_a_excluir = None
-        max_restricciones = -1
-        
-        for p in participantes_restantes:
-            if contadores[p.nombre] > max_restricciones:
-                max_restricciones = contadores[p.nombre]
-                candidato_a_excluir = p
+        if best_mesa != -1:
+            mesas_data[best_mesa].append(p)
+            asignacion[p] = best_mesa
 
-        # 2. Excluir y reintentar
-        if candidato_a_excluir:
-            print(f"-> Inviable. Excluyendo a: {candidato_a_excluir.nombre} (Restricciones activas: {max_restricciones})")
-            participantes_restantes.remove(candidato_a_excluir)
-            personas_excluidas.append(candidato_a_excluir.nombre)
+    # 3. Cálculo de métricas de satisfacción
+    total_deseos = 0
+    deseos_cumplidos = 0
+    for p_canon, mesa_idx in asignacion.items():
+        for amigo in amigos_map.get(p_canon, []):
+            if amigo in nombres_canonicos:
+                total_deseos += 1
+                if asignacion.get(amigo) == mesa_idx:
+                    deseos_cumplidos += 1
+    
+    metricas = {"total": total_deseos, "cumplidos": deseos_cumplidos}
+
+    # 4. Formatear Resultado Final (usando nombres originales)
+    resultado = {}
+    excluidos = []
+    for p in nombres_canonicos:
+        if p in asignacion:
+            resultado[canonical_to_original[p]] = asignacion[p]
         else:
-            # Esto solo debería ocurrir si la lista está vacía, 
-            # pero el bucle ya maneja eso.
-            break
+            excluidos.append(canonical_to_original[p])
 
-    return solucion, personas_excluidas
+    if not resultado and participantes:
+        return None, ["No se encontró ninguna asignación válida"], metricas
 
-# ----------------------------------------------------------------------
-# RESULTADO FINAL
-# ----------------------------------------------------------------------
+    return resultado, excluidos, metricas
 
-# El problema original es Inviable, ya que (Ana, Luis, Sofía) deben ir juntos (3 personas), 
-# pero luego Marta y Pedro quedan como los únicos restantes (2 personas), y deben ir 
-# separados entre sí y de Sofía, lo que fuerza a Pedro a la mesa de Ana/Luis/Sofía, 
-# violando el tamaño máximo de 3.
-sol, excluidos = asignar_mesas_optimizando(personas, tamano_mesa=3)
+# --- Pruebas del Caso del Usuario (Versión Pure Python) ---
+if __name__ == "__main__":
+    test_personas = [
+        Persona("Figuel", amistades=["novia"]),
+        Persona("Novia", amistades=["Figel"], enemistades=["exnovio"]),
+        Persona("Exnovio", amistades=["Novia"]),
+    ]
 
-print(f"\nIntentando asignar mesas (Tamaño máximo: 3)...")
+    print("\nResultados de la prueba (Figuel, Novia, Exnovio) - SIN ORTOOLS:")
+    print("Mesa de 2 personas:")
+    sol, excluidos, metricas = asignar_mesas_optimizando(test_personas, tamano_mesa=2)
 
-if sol is not None:
-    
-    # Formatear la salida para mostrar las mesas
-    mesas_final = {}
-    for nombre, mesa_id in sol.items():
-        if mesa_id not in mesas_final:
-            mesas_final[mesa_id] = []
-        mesas_final[mesa_id].append(nombre)
-        
-    print("\n✅ Solución Factible Encontrada:")
-    print("------------------------------")
-    
-    print("Asignación de Mesas:")
-    for mesa_id, nombres_mesa in sorted(mesas_final.items()):
-        print(f"  Mesa {mesa_id}: {', '.join(nombres_mesa)}")
-
-    if excluidos:
-        print(f"\n🚫 Personas Excluidas para encontrar Factibilidad:")
-        print(f"  {', '.join(excluidos)}")
+    if sol:
+        mesas_res = {}
+        for n, m in sol.items():
+            mesas_res.setdefault(m, []).append(n)
+        for m_id, gente in sorted(mesas_res.items()):
+            print(f"  Mesa {m_id+1}: {', '.join(gente)}")
+        print(f"\nSatisfacción: {metricas['cumplidos']}/{metricas['total']} deseos cumplidos.")
     else:
-        print("\n🎉 Todas las personas fueron asignadas sin conflictos.")
-else:
-    print("\n❌ No se pudo encontrar una solución factible, incluso después de excluir a todos los candidatos principales.")
-    print(f"Personas Excluidas: {', '.join(excluidos)}")
+        print("  No se encontró solución.")
