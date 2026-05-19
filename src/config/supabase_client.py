@@ -2,8 +2,8 @@ from supabase import create_client, Client
 
 # --- CONFIGURACIÓN DE SUPABASE ---
 # Reemplaza con tus credenciales reales si cambian
-SUPABASE_URL = "https://kdgjkiptelkrzahmfafi.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkZ2praXB0ZWxrcnphaG1mYWZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwMTg3OTgsImV4cCI6MjA4MzU5NDc5OH0.QUz5Z3OGQ4a44zhQ4Xokbpc5AKDP4sSmFsJwftTsSUI"
+SUPABASE_URL = "https://yuaxnqjqxrmahlmlbujj.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1YXhucWpxeHJtYWhsbWxidWpqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTE2NjE1NCwiZXhwIjoyMDk0NzQyMTU0fQ.Ogh2OkTGlrEFSRkSJAmQCl1f94_iiBYKpYoxy04_-Sc"
 
 _supabase: Client = None
 

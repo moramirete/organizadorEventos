@@ -125,18 +125,18 @@ class controladorNuevoEvento:
                 supabase.table("usuarios").upsert({
                     "id": usuario_id,
                     "username": usuario_nombre,
-                    "email": usuario_email
+                    "email": usuario_email,
+                    "password_hash": ""
                 }).execute()
             except Exception as e:
                 print(f"Aviso: No se pudo auto-sincronizar perfil: {e}")
 
-            # Preparamos los datos según la imagen de la tabla 'eventos' que me pasaste
-            # Nota: 'distribucion' guardará tanto participantes como mesas como JSON
-            # Nota: 'num_mesas' e 'inv_por_mesa' no están en la DB, van dentro de distribucion
+        
             datos_evento = {
                 "usuario_id": usuario_id,
-                "ubicacion": nombre, # En la DB se usa 'nombre' como título
+                "nombre": nombre,
                 "fecha": fecha,
+                "hora": "00:00:00",
                 "ubicacion": cliente,
                 "telefono": int(telefono) if telefono.isdigit() else 0,
                 "num_participantes": len(self.evento.participantes),

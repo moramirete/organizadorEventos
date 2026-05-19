@@ -168,22 +168,24 @@ class controladorEditarEvento:
                 supabase.table("usuarios").upsert({
                     "id": usuario_id,
                     "username": usuario_nombre,
-                    "email": usuario_email
+                    "email": usuario_email,
+                    "password_hash": ""
                 }).execute()
             except Exception as e:
                 print(f"Error sincronizando perfil en editar: {e}")
 
-            # Preparamos los datos completos para Supabase
-            # Nota: 'num_mesas' e 'inv_por_mesa' van dentro de distribucion
+          
+     
             datos_evento = {
-                "id": self.evento.id, # IMPORTANTE: Usamos el ID para actualizar
-                "usuario_id": usuario_id,
-                "nombre": nombre,
-                "fecha": fecha,
-                "ubicacion": cliente,
-                "telefono": int(telefono) if telefono.isdigit() else 0,
-                "num_participantes": num_mesas * inv_por_mesa,
-                "distribucion": self.evento.to_android_json()
+                 "id": self.evento.id, # Usamos el ID para actualizar
+                 "usuario_id": usuario_id,
+                 "nombre": nombre,
+                 "fecha": fecha,
+                 "hora": "00:00:00",
+                 "ubicacion": cliente,
+                 "telefono": int(telefono) if telefono.isdigit() else 0,
+                 "num_participantes": num_mesas * inv_por_mesa,
+                 "distribucion": self.evento.to_android_json()
             }
             
             supabase.table("eventos").upsert(datos_evento).execute()

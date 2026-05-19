@@ -1,5 +1,7 @@
 import sys
 import os
+
+
 from PyQt5.QtWidgets import QMainWindow, QMessageBox
 from supabase import create_client, Client
 
@@ -166,7 +168,8 @@ class ControladorLogin:
             self.supabase.table("usuarios").upsert({
                 "id": user_id,
                 "username": nombre,
-                "email": email
+                "email": email,
+                "password_hash": ""
             }).execute()
         except Exception as e:
             print(f"Error sincronizando perfil: {e}")
